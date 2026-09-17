@@ -1,32 +1,9 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-  <title>DEFENSE</title>
-  <link rel="stylesheet" href="./style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Frost Outpost Defense</title>
+<link rel="stylesheet" href="./style.css">
 </head>
-<body>
-  <div id="game" class="game">
-    <div class="snow"></div>
-    <header class="hud">
-      <div class="resource"><span class="resource-icon">◆</span><span id="resource">0</span></div>
-      <div class="wave">WAVE <b id="wave">1</b></div>
-      <div class="base-hp">BASE <b id="hp">100</b></div>
-    </header>
-    <main id="field" class="field">
-      <div id="enemyLayer"></div>
-      <div id="pickupLayer"></div>
-      <div id="player"><div class="player-gun"></div></div>
-      <div id="squad"></div>
-      <div class="base"></div>
-    </main>
-    <div class="bottom-ui">
-      <button id="addUnit" disabled>병력 추가 <span>100</span></button>
-      <div class="hint">화면을 눌러 공격 방향을 지정하세요</div>
-    </div>
-    <div id="message" class="message"></div>
-  </div>
-  <script src="./game.js"></script>
-</body>
-</html>
+<body><div id="game"><canvas id="canvas"></canvas><div id="hud"></div><div id="joystick"><i></i></div><div id="hint">화면을 드래그해 이동</div><div id="toast"></div><div id="start" class="overlay"><div class="card"><div class="logo">FROST OUTPOST</div><h1>혹한기 전초기지<br>디펜스 타이쿤</h1><p>늑대를 사냥하고 고기를 팔아<br>기지를 강화하세요.</p><button id="startBtn">게임 시작</button></div></div><div id="result" class="overlay hidden"><div class="card"><div id="resultTitle" class="logo"></div><h1 id="resultText"></h1><p id="resultDetail"></p><button id="restartBtn">다시 시작</button></div></div></div><script src="./game.js"></script></body></html>
