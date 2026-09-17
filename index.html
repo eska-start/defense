@@ -3,7 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Frost Outpost Defense</title>
+<title>아웃포스트 9</title>
 <link rel="stylesheet" href="./style.css">
 </head>
-<body><div id="game"><canvas id="canvas"></canvas><div id="hud"></div><div id="joystick"><i></i></div><div id="hint">화면을 드래그해 이동</div><div id="toast"></div><div id="start" class="overlay"><div class="card"><div class="logo">FROST OUTPOST</div><h1>혹한기 전초기지<br>디펜스 타이쿤</h1><p>늑대를 사냥하고 고기를 팔아<br>기지를 강화하세요.</p><button id="startBtn">게임 시작</button></div></div><div id="result" class="overlay hidden"><div class="card"><div id="resultTitle" class="logo"></div><h1 id="resultText"></h1><p id="resultDetail"></p><button id="restartBtn">다시 시작</button></div></div></div><script src="./game.js"></script></body></html>
+<body>
+<div id="game">
+  <canvas id="canvas"></canvas>
+  <div id="hud"></div>
+  <div id="toast"></div>
+  <div id="start" class="overlay"><div class="card">
+    <div class="eyebrow">OUTPOST 9</div><h1>아웃포스트 9</h1>
+    <p>무너진 전초기지를 지키고<br>타워와 영웅을 성장시키세요.</p>
+    <button id="startBtn">방어 시작</button>
+  </div></div>
+  <div id="upgrade" class="overlay hidden"><div class="card">
+    <div class="eyebrow">WAVE CLEAR</div><h1 id="upgradeTitle">강화 선택</h1><p id="upgradeDesc">하나를 선택하세요.</p>
+    <div id="upgradeChoices"></div>
+  </div></div>
+  <div id="gameover" class="overlay hidden"><div class="card">
+    <div class="eyebrow">OUTPOST FALLEN</div><h1>기지가 함락되었습니다</h1><p id="gameoverDetail"></p>
+    <button id="restartBtn">다시 방어</button>
+  </div></div>
+  <div id="buildBar">
+    <button data-build="arrow">🏹<b>궁수</b><small>40G</small></button>
+    <button data-build="ice">❄<b>빙결</b><small>55G</small></button>
+    <button data-build="fire">🔥<b>화염</b><small>70G</small></button>
+    <button data-build="wall">🧱<b>벽</b><small>30G</small></button>
+  </div>
+  <div id="skillBar"><button id="skillBtn">⚡<span>전격</span><small>Q</small></button></div>
+  <div id="hint">타워를 선택한 뒤 맵을 눌러 설치 · 영웅은 드래그로 이동</div>
+</div>
+<script src="./game.js"></script>
+</body>
+</html>
