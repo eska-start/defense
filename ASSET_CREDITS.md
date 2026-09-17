@@ -2,18 +2,12 @@
 
 게임에서 사용하는 외부 무료 에셋입니다.
 
-## OpenGameArt — 32x32 RPG Character Sprites
-- Author: Eldiran
+## Tiny RPG - Forest
+- Author: Luis Zuno (ansimuz)
 - License: CC0
-- Used for: player character directional sprite sheet
-- Source: https://opengameart.org/content/32x32-rpg-character-sprites
-- Direct image: https://opengameart.org/sites/default/files/RPGSoldier32x32.png
+- Used for: hero 4-direction walk sprites, Mole/Treant enemy sprites, RPG tiles
+- Source: https://opengameart.org/content/tiny-rpg-forest
+- Runtime source repository: https://github.com/pierpo/phaser3-simple-rpg
 
-## OpenGameArt — 16x16 Fantasy RPG Trash Mobs (animated)
-- Author: Emcee Flesher
-- License: CC0 / OGA-BY 3.0
-- Used for: enemy sprite sheet
-- Source: https://opengameart.org/content/16x16-fantasy-rpg-trash-mobs-animated
-- Direct image: https://opengameart.org/sites/default/files/trashmobz-alpha.png
-
-기존에 사용하던 Zombies & Skeletons 에셋은 현재 게임 렌더링에서 제거했습니다.
+현재 게임의 주인공과 몬스터는 위 에셋의 실제 방향별 스프라이트 시트를 사용합니다.
+몬스터는 Mole/Treant 두 종류를 실제 걷기 애니메이션으로 렌더링합니다.
