@@ -2,16 +2,18 @@
 
 게임에서 사용하는 외부 무료 에셋입니다.
 
-## OpenGameArt — Zombies & Skeletons
-- Author: artisticdude
+## OpenGameArt — 32x32 RPG Character Sprites
+- Author: Eldiran
 - License: CC0
-- Used for: enemy sprites
-- Source: https://opengameart.org/content/zombies-skeletons
+- Used for: player character directional sprite sheet
+- Source: https://opengameart.org/content/32x32-rpg-character-sprites
+- Direct image: https://opengameart.org/sites/default/files/RPGSoldier32x32.png
 
-## OpenGameArt — RPG Tileset
-- Author: russpuppy
-- License: CC0
-- Used as: optional environment / tile reference
-- Source: https://opengameart.org/content/rpg-tileset
+## OpenGameArt — 16x16 Fantasy RPG Trash Mobs (animated)
+- Author: Emcee Flesher
+- License: CC0 / OGA-BY 3.0
+- Used for: enemy sprite sheet
+- Source: https://opengameart.org/content/16x16-fantasy-rpg-trash-mobs-animated
+- Direct image: https://opengameart.org/sites/default/files/trashmobz-alpha.png
 
-The game does not require attribution for these CC0 assets, but the original creators are recorded here for reference.
+기존에 사용하던 Zombies & Skeletons 에셋은 현재 게임 렌더링에서 제거했습니다.
