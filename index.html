@@ -4,33 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>중앙 수호탑</title>
-<link rel="stylesheet" href="./style.css?v=3d3">
+<link rel="stylesheet" href="./style.css?v=eq1">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
 </head>
 <body>
 <main id="game">
   <div id="canvas"></div>
   <div id="hud">
-    <section class="hudBox left">
-      <b id="wave">WAVE 1</b><span id="direction">북 방향</span><span>적 <i id="waveCount">0 / 0</i></span>
-      <span><b id="heroName">전사</b> · <b id="level">LV 1</b> · XP <i id="xp">0 / 100</i></span>
-      <span>GOLD <i id="gold">500 G</i> · 장비 <i id="inventoryText">0 / 6</i></span>
-    </section>
-    <section class="hudBox right">
-      <span>수호탑 HP <i id="towerText">3400 / 3400</i></span><div class="bar"><div id="towerBar"></div></div>
-      <span>영웅 HP <i id="heroHpText">600 / 600</i></span><div class="bar hero"><div id="heroBar"></div></div>
-      <span>Q 필살기 <b id="skillText">READY</b></span>
-    </section>
-    <button id="shopBtn" class="hudShop">상점 <small>I</small></button>
+    <section class="hudBox left"><b id="wave">WAVE 1</b><span id="direction">북 방향</span><span>적 <i id="waveCount">0 / 0</i></span><span><b id="heroName">전사</b> · <b id="level">LV 1</b> · XP <i id="xp">0 / 100</i></span><span>GOLD <i id="gold">500 G</i> · 장비 <i id="inventoryText">0 / 8</i></span></section>
+    <section class="hudBox right"><span>수호탑 HP <i id="towerText">3400 / 3400</i></span><div class="bar"><div id="towerBar"></div></div><span>영웅 HP <i id="heroHpText">600 / 600</i></span><div class="bar hero"><div id="heroBar"></div></div><span>Q 필살기 <b id="skillText">READY</b></span></section>
+    <div class="hudButtons"><button id="equipBtn" class="hudAction">장비 <small>E</small></button><button id="shopBtn" class="hudAction">상점 <small>I</small></button></div>
   </div>
   <div id="notice"></div>
-  <div id="start" class="overlay"><section class="card"><div class="eyebrow">3D HERO DEFENSE</div><h1>중앙 수호탑</h1><p>중앙 성채를 지키며 사방에서 몰려오는 몬스터를 처치하세요.<br>레벨업 · 골드 · 스탯 책 · 장비 · 5웨이브 보스</p><button id="startBtn">게임 시작</button><div class="hint">WASD / 방향키 이동 · Q 스킬 · I 상점 · ESC 일시정지</div></section></div>
-  <div id="heroSelect" class="overlay hidden"><section class="card wide"><div class="eyebrow">CHOOSE HERO</div><h1>영웅 선택</h1><div class="heroChoices"><button id="warriorBtn" class="heroChoice"><b>전사</b><small>기사 모델 · 근접 · 높은 체력<br>Q: 대형 충격파</small></button><button id="mageBtn" class="heroChoice"><b>마법사</b><small>마법사 모델 · 원거리 · 광역<br>Q: 마력 폭발</small></button><button id="rangerBtn" class="heroChoice"><b>궁수</b><small>로그형 궁수 모델 · 활 장착 · 고속 공격<br>Q: 연쇄 사격</small></button></div></section></div>
+  <div id="start" class="overlay"><section class="card"><div class="eyebrow">3D HERO DEFENSE</div><h1>중앙 수호탑</h1><p>중앙 성채를 지키며 사방에서 몰려오는 몬스터를 처치하세요.<br>레벨업 · 골드 · 장비 · 스탯 책 · 5웨이브 보스</p><button id="startBtn">게임 시작</button><div class="hint">WASD / 방향키 이동 · Q 스킬 · E 장비 · I 상점 · ESC 일시정지</div></section></div>
+  <div id="heroSelect" class="overlay hidden"><section class="card wide"><div class="eyebrow">CHOOSE HERO</div><h1>영웅 선택</h1><div class="heroChoices"><button id="warriorBtn" class="heroChoice"><b>전사</b><small>기사 모델 · 근접 · 높은 체력<br>Q: 대형 충격파</small></button><button id="mageBtn" class="heroChoice"><b>마법사</b><small>마법사 모델 · 원거리 · 광역<br>Q: 마력 폭발</small></button><button id="rangerBtn" class="heroChoice"><b>궁수</b><small>전용 궁수 3D 모델 · 긴 사거리 · 빠른 공격<br>Q: 연쇄 사격</small></button></div></section></div>
   <div id="levelUp" class="overlay hidden"><section class="card"><div class="eyebrow">LEVEL UP</div><h1>성장 선택</h1><div id="levelChoices" class="choices"></div></section></div>
-  <div id="shop" class="overlay hidden"><section class="card wide shopCard"><div class="shopHead"><div><div class="eyebrow">ITEM SHOP</div><h1>아이템 상점</h1></div><strong id="shopGold">500 G</strong></div><p class="shopHint">전투 중에도 <b>I</b> 또는 화면의 <b>상점</b> 버튼으로 열 수 있습니다.</p><div id="shopItems" class="shopItems"></div><div class="books"><h3>스탯 책</h3><div id="bookLine"></div></div><button id="shopClose">전투로 돌아가기</button></section></div>
+  <div id="equipment" class="overlay hidden"><section class="card equipmentCard"><div class="equipHeader"><div><div class="eyebrow">CHARACTER</div><h1>장비</h1></div><span>부위를 클릭하면 장착/해제</span></div><div class="equipmentLayout"><div id="equipSlots" class="equipSlots"></div><div class="equipCenter"><div class="equipModelBox"><div id="equipCharacter">전사</div><small>3D CHARACTER</small></div><div id="equipStats" class="equipStats"></div></div><div class="inventoryPanel"><h3>인벤토리</h3><div id="inventoryGrid" class="inventoryGrid"></div><p>상점에서 구매한 아이템은 여기로 들어옵니다.<br>아이템을 클릭하면 해당 부위에 장착됩니다.</p></div></div><button id="equipClose">전투로 돌아가기</button></section></div>
+  <div id="shop" class="overlay hidden"><section class="card wide shopCard"><div class="shopHead"><div><div class="eyebrow">ITEM SHOP</div><h1>아이템 상점</h1></div><strong id="shopGold">500 G</strong></div><p class="shopHint">구매한 아이템은 <b>자동 장착되지 않고 인벤토리로 이동</b>합니다. 장비 메뉴에서 착용하세요.</p><div id="shopItems" class="shopItems"></div><div class="books"><h3>스탯 책</h3><div id="bookLine"></div></div><button id="shopClose">전투로 돌아가기</button></section></div>
   <div id="pause" class="overlay hidden"><section class="card"><div class="eyebrow">PAUSED</div><h1>일시정지</h1><button id="resumeBtn">계속하기</button></section></div>
   <div id="gameover" class="overlay hidden"><section class="card"><div class="eyebrow">GAME OVER</div><h1>수호탑 함락</h1><p id="overDetail"></p><button id="restartBtn">메뉴로</button></section></div>
 </main>
-<script type="module" src="./game3d_v2.js?v=3d3"></script>
+<script type="module" src="./game3d_equipment.js?v=eq1"></script>
 </body>
 </html>
