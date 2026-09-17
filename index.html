@@ -8,16 +8,16 @@
 </head>
 <body>
 <div id="game">
-  <canvas id="canvas"></canvas>
+  <div id="canvas"></div>
   <div id="hud"></div>
   <div id="toast"></div>
   <div id="start" class="overlay"><div class="card">
-    <div class="eyebrow">OUTPOST 9</div><h1>아웃포스트 9</h1>
-    <p>무너진 전초기지를 지키고<br>타워와 영웅을 성장시키세요.</p>
+    <div class="eyebrow">OUTPOST 9 · REBUILT</div><h1>아웃포스트 9</h1>
+    <p>영웅을 직접 움직이고 타워를 배치해<br>무너진 전초기지를 끝까지 방어하세요.</p>
     <button id="startBtn">방어 시작</button>
   </div></div>
   <div id="upgrade" class="overlay hidden"><div class="card">
-    <div class="eyebrow">WAVE CLEAR</div><h1 id="upgradeTitle">강화 선택</h1><p id="upgradeDesc">하나를 선택하세요.</p>
+    <div class="eyebrow">WAVE CLEAR</div><h1>강화 선택</h1><p>이번 전투를 바꿀 강화 하나를 선택하세요.</p>
     <div id="upgradeChoices"></div>
   </div></div>
   <div id="gameover" class="overlay hidden"><div class="card">
@@ -28,11 +28,12 @@
     <button data-build="arrow">🏹<b>궁수</b><small>40G</small></button>
     <button data-build="ice">❄<b>빙결</b><small>55G</small></button>
     <button data-build="fire">🔥<b>화염</b><small>70G</small></button>
-    <button data-build="wall">🧱<b>벽</b><small>30G</small></button>
+    <button data-build="wall">🧱<b>방벽</b><small>30G</small></button>
   </div>
   <div id="skillBar"><button id="skillBtn">⚡<span>전격</span><small>Q</small></button></div>
-  <div id="hint">타워를 선택한 뒤 맵을 눌러 설치 · 영웅은 드래그로 이동</div>
+  <div id="hint">타워를 선택해 맵에 설치 · WASD/방향키 이동 · Q 전격</div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
 <script src="./game.js"></script>
 </body>
 </html>
