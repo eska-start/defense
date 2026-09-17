@@ -4,8 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>중앙 수호탑</title>
-<link rel="stylesheet" href="./style.css?v=eq3">
+<link rel="stylesheet" href="./style.css?v=eq4">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+<script>
+window.addEventListener('error',e=>{const n=document.getElementById('notice');if(n){n.textContent='게임 초기화 오류: '+(e.message||'스크립트 오류');n.classList.add('show')}});
+window.addEventListener('DOMContentLoaded',()=>{
+  const start=document.getElementById('startBtn'), startLayer=document.getElementById('start'), heroLayer=document.getElementById('heroSelect');
+  if(start) start.addEventListener('click',()=>{startLayer?.classList.add('hidden');heroLayer?.classList.remove('hidden')},{capture:true});
+});
+</script>
 </head>
 <body>
 <main id="game">
@@ -24,6 +31,6 @@
   <div id="pause" class="overlay hidden"><section class="card"><div class="eyebrow">PAUSED</div><h1>일시정지</h1><button id="resumeBtn">계속하기</button></section></div>
   <div id="gameover" class="overlay hidden"><section class="card"><div class="eyebrow">GAME OVER</div><h1>수호탑 함락</h1><p id="overDetail"></p><button id="restartBtn">메뉴로</button></section></div>
 </main>
-<script type="module" src="./game3d_equipment.js?v=stable3"></script>
+<script type="module" src="./game3d_equipment.js?v=stable4"></script>
 </body>
 </html>
