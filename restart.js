@@ -1,1 +1,0 @@
-(()=>{'use strict';const b=document.getElementById('restartBtn');if(!b)return;b.addEventListener('click',()=>{window.location.href=window.location.pathname+'?newgame='+Date.now()},{capture:true});})();
