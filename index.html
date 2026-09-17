@@ -4,44 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>중앙 수호탑</title>
-<link rel="stylesheet" href="./style.css?v=mobile2">
+<link rel="stylesheet" href="./style.css?v=visual1">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
-<style>
-#mobileControls{display:none;position:absolute;z-index:32;inset:0;pointer-events:none}
-#mobileJoystick{position:absolute;left:20px;bottom:22px;width:120px;height:120px;border-radius:50%;border:3px solid rgba(220,230,224,.38);background:rgba(8,18,13,.45);box-shadow:inset 0 0 22px rgba(0,0,0,.3);pointer-events:auto;touch-action:none}
-#mobileStick{position:absolute;left:50%;top:50%;width:52px;height:52px;border-radius:50%;border:3px solid rgba(245,248,246,.72);background:rgba(218,187,96,.76);transform:translate(-50%,-50%);box-shadow:0 4px 12px rgba(0,0,0,.35);pointer-events:none}
-#mobileSkill{position:absolute;right:22px;bottom:30px;width:72px;height:72px;border-radius:50%;padding:0;border:3px solid #8b6c32;background:#d5a84f;color:#17130b;font:900 22px monospace;box-shadow:5px 5px 0 #53381d;pointer-events:auto;touch-action:none}
-@media(max-width:900px){#mobileControls{display:block}}
-@media(max-width:560px){#mobileJoystick{left:16px;bottom:18px;width:112px;height:112px}#mobileStick{width:48px;height:48px}#mobileSkill{right:18px;bottom:24px;width:66px;height:66px}}
-</style>
 <script>
 window.addEventListener('error',e=>{const n=document.getElementById('notice');if(n){n.textContent='게임 초기화 오류: '+(e.message||'스크립트 오류');n.classList.add('show')}});
-window.addEventListener('DOMContentLoaded',()=>{
-  const start=document.getElementById('startBtn'), startLayer=document.getElementById('start'), heroLayer=document.getElementById('heroSelect');
-  if(start) start.addEventListener('click',()=>{startLayer.classList.add('hidden');heroLayer.classList.remove('hidden')},{capture:true});
-});
 </script>
 </head>
 <body>
 <main id="game">
-  <div id="canvas"></div>
-  <div id="hud">
-    <section class="hudBox left"><b id="wave">WAVE 1</b><span id="direction">북 방향</span><span>적 <i id="waveCount">0 / 0</i></span><span><b id="heroName">전사</b> · <b id="level">LV 1</b> · XP <i id="xp">0 / 100</i></span><span>GOLD <i id="gold">500 G</i> · 장비 <i id="inventoryText">0 / 8</i></span></section>
-    <section class="hudBox right"><span>수호탑 HP <i id="towerText">3400 / 3400</i></span><div class="bar"><div id="towerBar"></div></div><span>영웅 HP <i id="heroHpText">600 / 600</i></span><div class="bar hero"><div id="heroBar"></div></div><span>Q 필살기 <b id="skillText">READY</b></span></section>
-    <div class="hudButtons"><button id="equipBtn" type="button" class="hudAction">장비 <small>E</small></button><button id="shopBtn" type="button" class="hudAction">상점 <small>I</small></button></div>
-  </div>
-  <div id="mobileControls" aria-label="모바일 조작"><div id="mobileJoystick"><div id="mobileStick"></div></div><button id="mobileSkill" type="button">Q</button></div>
-  <div id="notice"></div>
-  <div id="start" class="overlay"><section class="card"><div class="eyebrow">3D HERO DEFENSE</div><h1>중앙 수호탑</h1><p>중앙 수정탑을 지키며 사방에서 몰려오는 몬스터를 처치하세요.<br>레벨업 · 골드 · 장비 · 스탯 책 · 5웨이브 보스</p><button id="startBtn">게임 시작</button><div class="hint">WASD / 방향키 이동 · 모바일은 왼쪽 조이스틱 · Q 스킬 · E 장비 · I 상점 · ESC 일시정지</div></section></div>
-  <div id="heroSelect" class="overlay hidden"><section class="card wide"><div class="eyebrow">CHOOSE HERO</div><h1>영웅 선택</h1><div class="heroChoices"><button id="warriorBtn" class="heroChoice"><b>전사</b><small>기사 모델 · 근접 · 높은 체력<br>Q: 대형 충격파</small></button><button id="mageBtn" class="heroChoice"><b>마법사</b><small>마법사 모델 · 원거리 · 광역<br>Q: 마력 폭발</small></button><button id="rangerBtn" class="heroChoice"><b>궁수</b><small>전용 궁수 3D 모델 · 긴 사거리 · 빠른 공격<br>Q: 연쇄 사격</small></button></div></section></div>
-  <div id="levelUp" class="overlay hidden"><section class="card"><div class="eyebrow">LEVEL UP</div><h1>성장 선택</h1><div id="levelChoices" class="choices"></div></section></div>
-  <div id="equipment" class="overlay hidden"><section class="card equipmentCard"><div class="equipHeader"><div><div class="eyebrow">CHARACTER</div><h1>장비</h1></div><span>인벤토리 아이템 클릭: 장착 · 장착 슬롯 클릭: 해제</span></div><div class="equipmentLayout"><div id="equipSlots" class="equipSlots"></div><div class="equipCenter"><div id="equipModelBox" class="equipModelBox"><div id="equipCharacter">전사</div><small>3D CHARACTER</small></div><div id="equipStats" class="equipStats"></div></div><div class="inventoryPanel"><h3>인벤토리 <span id="inventoryTitle">0 / 8</span></h3><div id="inventoryGrid" class="inventoryGrid"></div><p>상점에서 구매한 아이템은 이곳으로 들어옵니다.<br>아이템을 클릭하면 해당 부위에 장착됩니다.</p></div></div><button id="equipClose" type="button">전투로 돌아가기</button></section></div>
-  <div id="shop" class="overlay hidden"><section class="card wide shopCard"><div class="shopHead"><div><div class="eyebrow">ITEM SHOP</div><h1>아이템 상점</h1></div><strong id="shopGold">500 G</strong></div><p class="shopHint">구매한 장비는 <b>자동 장착되지 않고 인벤토리로 이동</b>합니다.</p><div id="shopItems" class="shopItems"></div><div class="books"><h3>스탯 책</h3><div id="bookLine"></div></div><button id="shopClose" type="button">전투로 돌아가기</button></section></div>
-  <div id="pause" class="overlay hidden"><section class="card"><div class="eyebrow">PAUSED</div><h1>일시정지</h1><button id="resumeBtn" type="button">계속하기</button></section></div>
-  <div id="gameover" class="overlay hidden"><section class="card"><div class="eyebrow">GAME OVER</div><h1>수호탑 함락</h1><p id="overDetail"></p><button id="restartBtn" type="button">메뉴로</button></section></div>
+<div id="canvas"></div>
+<div id="hud">
+<section class="hudBox left"><b id="wave">WAVE 1</b><span id="direction">북 방향</span><span>적 <i id="waveCount">0 / 0</i></span><span><b id="heroName">전사</b> · <b id="level">LV 1</b> · XP <i id="xp">0 / 100</i></span><span>GOLD <i id="gold">500 G</i> · 장비 <i id="inventoryText">0 / 8</i></span></section>
+<section class="hudBox right"><span>수호탑 HP <i id="towerText">3400 / 3400</i></span><div class="bar"><div id="towerBar"></div></div><span>영웅 HP <i id="heroHpText">600 / 600</i></span><div class="bar hero"><div id="heroBar"></div></div><span>Q 필살기 <b id="skillText">READY</b></span></section>
+<div class="hudButtons"><button id="equipBtn" type="button" class="hudAction">장비 <small>E</small></button><button id="shopBtn" type="button" class="hudAction">상점 <small>I</small></button></div>
+</div>
+<div id="notice"></div>
+<div id="start" class="overlay"><section class="card"><div class="eyebrow">3D HERO DEFENSE</div><h1>중앙 수호탑</h1><p>중앙 성채를 지키며 사방에서 몰려오는 몬스터를 처치하세요.<br>레벨업 · 골드 · 장비 · 5웨이브 보스</p><button id="startBtn" type="button">게임 시작</button><div class="hint">WASD / 방향키 이동 · Q 스킬 · E 장비 · I 상점 · ESC 일시정지</div></section></div>
+<div id="heroSelect" class="overlay hidden"><section class="card wide"><div class="eyebrow">CHOOSE HERO</div><h1>영웅 선택</h1><div class="heroChoices"><button id="warriorBtn" class="heroChoice" type="button"><b>전사</b><small>기사 모델 · 근접 · 높은 체력<br>Q: 대형 충격파</small></button><button id="mageBtn" class="heroChoice" type="button"><b>마법사</b><small>마법사 모델 · 원거리 · 광역<br>Q: 마력 폭발</small></button><button id="rangerBtn" class="heroChoice" type="button"><b>궁수</b><small>전용 궁수 3D 모델 · 긴 사거리 · 빠른 공격<br>Q: 연쇄 사격</small></button></div></section></div>
+<div id="levelUp" class="overlay hidden"><section class="card"><div class="eyebrow">LEVEL UP</div><h1>성장 선택</h1><div id="levelChoices" class="choices"></div></section></div>
+<div id="equipment" class="overlay hidden"><section class="card equipmentCard"><div class="equipHeader"><div><div class="eyebrow">CHARACTER</div><h1>장비</h1></div><span>인벤토리 아이템 클릭: 장착 · 장착 슬롯 클릭: 해제</span></div><div class="equipmentLayout"><div id="equipSlots" class="equipSlots"></div><div class="equipCenter"><div id="equipModelBox" class="equipModelBox"><div id="equipCharacter">전사</div><small>3D CHARACTER</small></div><div id="equipStats" class="equipStats"></div></div><div class="inventoryPanel"><h3>인벤토리 <span id="inventoryTitle">0 / 8</span></h3><div id="inventoryGrid" class="inventoryGrid"></div><p>상점에서 구매한 장비는 인벤토리로 들어옵니다.<br>아이템을 클릭하면 해당 부위에 장착됩니다.</p></div></div><button id="equipClose" type="button">전투로 돌아가기</button></section></div>
+<div id="shop" class="overlay hidden"><section class="card wide shopCard"><div class="shopHead"><div><div class="eyebrow">ITEM SHOP</div><h1>아이템 상점</h1></div><strong id="shopGold">500 G</strong></div><p class="shopHint">구매한 장비는 <b>자동 장착되지 않고 인벤토리로 이동</b>합니다.</p><div id="shopItems" class="shopItems"></div><div class="books"><h3>스탯 책</h3><div id="bookLine"></div></div><button id="shopClose" type="button">전투로 돌아가기</button></section></div>
+<div id="pause" class="overlay hidden"><section class="card"><div class="eyebrow">PAUSED</div><h1>일시정지</h1><button id="resumeBtn" type="button">계속하기</button></section></div>
+<div id="gameover" class="overlay hidden"><section class="card"><div class="eyebrow">GAME OVER</div><h1>수호탑 함락</h1><p id="overDetail"></p><button id="restartBtn" type="button">메뉴로</button></section></div>
 </main>
-<script type="module" src="./castle_fix.js?v=mobile3"></script>
-<script type="module" src="./game3d_fixed.js?v=mobile3"></script>
-<script src="./mobile_fix.js?v=mobile3"></script>
+<script type="module" src="./game3d_equipment.js?v=visual1"></script>
 </body>
 </html>
