@@ -1,0 +1,1 @@
+(()=>{'use strict';const b=document.getElementById('restartBtn');if(!b)return;b.addEventListener('click',()=>{location.reload()},{capture:true});})();
