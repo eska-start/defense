@@ -127,7 +127,7 @@ if (!window.THREE || !root) {
   const shopItems=[
     {id:'iron_sword',name:'강철검',slot:'weapon',cost:180,desc:'공격력 +35',stat:['damage',35],visual:'sword'},
     {id:'mage_staff',name:'마력 지팡이',slot:'weapon',cost:220,desc:'스킬 피해 +25%',stat:['power',0.25],visual:'staff'},
-    {id:'hunter_bow',name:'사냥꾼의 활',slot:'weapon',cost:220,desc:'공격력 +22 · 공격속도 +10%',stat:['damage',22],visual:'bow'},
+    {id:'hunter_bow',name:'사냥꾼의 활',slot:'weapon',cost:220,desc:'공격력 +22 · 공격속도 +10%',stat:['damage',22],visual:'bow',rateMul:0.90},
     {id:'iron_helm',name:'철제 투구',slot:'helmet',cost:160,desc:'최대 HP +90',stat:['maxHp',90],visual:'helm'},
     {id:'plate',name:'수호 갑옷',slot:'armor',cost:260,desc:'최대 HP +180',stat:['maxHp',180],visual:'armor'},
     {id:'gloves',name:'전투 장갑',slot:'gloves',cost:150,desc:'공격력 +12',stat:['damage',12],visual:'gloves'},
@@ -297,6 +297,7 @@ if (!window.THREE || !root) {
     wave=1;side=0;spawned=0;spawnClock=0.3;
     gold=500;xp=0;level=1;nextXP=100;
     tower.hp=tower.maxHp;
+    tower.armor=0;
     inventory=[];
     Object.keys(equipped).forEach(function(k){equipped[k]=null;});
     var d=heroDefs[hero.type];
@@ -632,6 +633,7 @@ if (!window.THREE || !root) {
 
   function rebuildStats(){
     var d=heroDefs[hero.type];
+    tower.armor=0;
 
     hero.maxHp=d.hp;
     hero.speed=d.speed;
@@ -649,6 +651,7 @@ if (!window.THREE || !root) {
       if(it.stat[0]==='maxHp')hero.maxHp+=it.stat[1];
       else if(it.stat[0]==='armor')tower.armor+=it.stat[1];
       else hero[it.stat[0]]+=it.stat[1];
+      if(it.rateMul)hero.rate*=it.rateMul;
     });
 
     hero.hp=Math.min(hero.maxHp,hero.hp);
