@@ -2,7 +2,6 @@
   const $ = id => document.getElementById(id);
   const equipment = $('equipment');
   const shop = $('shop');
-  const pause = $('pause');
   const notice = $('notice');
 
   if (!equipment || !shop) return;
@@ -40,7 +39,7 @@
     const character = $('equipCharacter');
     if (!slots || !grid) return;
 
-    character && (character.textContent = $('heroName')?.textContent || '전사');
+    if (character) character.textContent = $('heroName')?.textContent || '전사';
     slots.replaceChildren();
     grid.replaceChildren();
 
@@ -50,7 +49,7 @@
       b.className = 'equipSlot';
       b.dataset.slot = id;
       b.innerHTML = `<strong>${name}</strong><small>비어 있음</small>`;
-      b.onclick = () => notice && showNotice(`${name} 슬롯은 아직 비어 있습니다.`);
+      b.onclick = () => showNotice(`${name} 슬롯은 현재 비어 있습니다.`);
       slots.appendChild(b);
     });
 
@@ -114,9 +113,9 @@
     }
     if (k === 'escape' && isOverlayOpen('equipment')) {
       e.preventDefault();
-      closeEquipment();
+      hide('equipment');
     }
-  }, true);
+  });
 
   window.addEventListener('resize', () => {
     if (isOverlayOpen('equipment')) renderEquipment();
