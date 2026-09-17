@@ -9,8 +9,14 @@
 - Source: https://github.com/euuuuuuan/hollowmere-public/tree/main/public/models/char
 - License: CC0 1.0 Universal
 
+## 3DAssets.dev
+- Low Poly Archer Drawing A Bow — used for ranger hero
+- Model: https://cdn.3dassets.dev/assets/36374/v1/model.glb
+- Asset page: https://3dassets.dev/assets/low-poly-character-figures-archer-drawing-fb76407c
+- License: CC0 1.0 Universal
+
 ## 3D implementation
 - Three.js renderer with GLTFLoader
 - Central castle is assembled procedurally so the objective remains visually distinct from the source assets.
 
-The character models are loaded from their public GitHub-hosted GLB files at runtime. The referenced project documents these models as CC0 assets.
+The character models are loaded from their public runtime URLs. The referenced assets are released under CC0 1.0 Universal.
