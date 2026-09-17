@@ -1,13 +1,16 @@
-# Pixel Art Asset Credits
+# 3D Asset Credits
 
-게임에서 사용하는 외부 무료 에셋입니다.
+## Quaternius / Kay Lousberg character models
+- Knight.glb — used for warrior hero
+- Mage.glb — used for mage hero
+- Skeleton_Minion.glb — used for grunt enemies
+- Skeleton_Rogue.glb — used for runner / tank / boss enemies
+- Skeleton_Mage.glb — used for caster enemies
+- Source: https://github.com/euuuuuuan/hollowmere-public/tree/main/public/models/char
+- License: CC0 1.0 Universal
 
-## Tiny RPG - Forest
-- Author: Luis Zuno (ansimuz)
-- License: CC0
-- Used for: hero 4-direction walk sprites, Mole/Treant enemy sprites, RPG tiles
-- Source: https://opengameart.org/content/tiny-rpg-forest
-- Runtime source repository: https://github.com/pierpo/phaser3-simple-rpg
+## 3D implementation
+- Three.js renderer with GLTFLoader
+- Central castle is assembled procedurally so the objective remains visually distinct from the source assets.
 
-현재 게임의 주인공과 몬스터는 위 에셋의 실제 방향별 스프라이트 시트를 사용합니다.
-몬스터는 Mole/Treant 두 종류를 실제 걷기 애니메이션으로 렌더링합니다.
+The character models are loaded from their public GitHub-hosted GLB files at runtime. The referenced project documents these models as CC0 assets.
