@@ -1934,6 +1934,8 @@ if (joystickEl && knobEl) {
   };
 
   function placeJoystick(x, y) {
+    joystickEl.style.opacity = '1';
+    joystickEl.style.pointerEvents = 'none';
     const size = joystickEl.offsetWidth || 90;
     const half = size / 2;
     const left = Math.max(8, Math.min(innerWidth - size - 8, x - half));
@@ -1962,6 +1964,7 @@ if (joystickEl && knobEl) {
 
   function resetJoystick() {
     joystickActive = false;
+    joystickEl.style.opacity = '0';
     touchId = null;
     joyRect = null;
     knobEl.style.transform = 'translate(0px, 0px)';
