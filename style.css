@@ -195,7 +195,10 @@ body { touch-action: none; user-select: none; -webkit-user-select: none; }
   position: absolute; z-index: 35;
   bottom: 14px; left: 14px;
   width: 90px; height: 90px;
-  background: rgba(14, 26, 38, 0.6);
+  background: rgba(14, 26, 38, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.08s ease;
   border: 2px solid rgba(148, 163, 184, 0.35);
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.4);
   border-radius: 50%;
