@@ -1,311 +1,507 @@
-/* ═══════════════════════════════════════════════════
-   X HERO DEFENSE — Stylesheet
-═══════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   X HERO DEFENSE — 2.5D RETRO PIXEL ART RPG STYLESHEET
+   Compact & Responsive for Mobile & Desktop
+   Enchanted Forest & World Tree Aesthetic
+═══════════════════════════════════════════════════════════ */
 
-/* ─── RESET & BASE ─── */
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;overflow:hidden;
-  background:#050910;color:#e8eef2;
-  font-family:'Segoe UI',system-ui,-apple-system,'Noto Sans KR',sans-serif}
-body{touch-action:none;user-select:none;-webkit-user-select:none}
+/* ─── RESET & RETRO PIXEL BASE ─── */
+* { box-sizing: border-box; margin: 0; padding: 0; image-rendering: pixelated; }
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  background: #04080e; color: #e2e8f0;
+  font-family: 'Consolas', 'Courier New', 'Pretendard', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+body { touch-action: none; user-select: none; -webkit-user-select: none; }
 
 /* ─── GAME CONTAINER ─── */
-#game{position:relative;width:100%;height:100%;overflow:hidden;background:#070c12}
-#canvas{position:absolute;inset:0;overflow:hidden}
-#gameCanvas{display:block;width:100%;height:100%}
-.hidden{display:none!important}
+#game { position: relative; width: 100%; height: 100%; overflow: hidden; background: #060b12; }
+#canvas { position: absolute; inset: 0; overflow: hidden; }
+#gameCanvas { display: block; width: 100%; height: 100%; }
+.hidden { display: none !important; }
 
-/* ─── HUD ─── */
-#hud{position:absolute;z-index:30;inset:14px 14px auto;
-  display:grid;grid-template-columns:1fr auto 1fr;gap:10px;pointer-events:none}
-
-.hudBox{min-width:280px;padding:11px 14px;
-  background:rgba(12,24,18,.92);border:2px solid #2d6a4f;border-radius:8px;
-  box-shadow:0 6px 24px rgba(0,0,0,.6);
-  font-family:'Consolas','Courier New',monospace;font-size:12px;line-height:1.7;
-  display:flex;flex-direction:column;backdrop-filter:blur(6px)}
-.hudBox.left{justify-self:start}
-.hudBox.right{justify-self:end;min-width:285px}
-.hudBox>b:first-child{font-size:20px;color:#facc15;letter-spacing:1px}
-.hudBox i{font-style:normal;color:#38bdf8}
-
-/* ─── HP BARS ─── */
-.bar{height:11px;background:#0d1c14;border:2px solid #1c3826;border-radius:4px;margin:2px 0 6px;overflow:hidden}
-.bar>div{height:100%;width:100%;background:linear-gradient(90deg,#06b6d4,#38bdf8);border-radius:2px;transition:width .15s}
-.bar.hero>div{background:linear-gradient(90deg,#22c55e,#4ade80)}
-
-/* ─── HUD BUTTONS ─── */
-.hudButtons{display:flex;gap:8px;justify-self:center;align-self:start;pointer-events:auto}
-.hudAction{padding:12px 18px;border:2px solid #38bdf8;background:linear-gradient(180deg,#0284c7,#0369a1);
-  color:#f0f9ff;font:700 13px monospace;border-radius:8px;cursor:pointer;
-  box-shadow:0 3px 12px rgba(2,132,199,.4);transition:all .15s}
-.hudAction small{opacity:.7;margin-left:3px}
-.hudAction:hover{border-color:#7dd3fc;color:#ffffff;transform:translateY(-1px);box-shadow:0 5px 16px rgba(56,189,248,.6)}
-.hudAction:active{transform:translateY(1px)}
-.skillAction{border-color:#ca8a04;background:linear-gradient(180deg,#a16207,#713f12);color:#fef08a}
-.skillAction:hover{border-color:#facc15;color:#ffffff;box-shadow:0 5px 16px rgba(250,204,21,.5)}
-
-/* ─── SKILL BAR ─── */
-#skillBar{position:absolute;z-index:30;bottom:16px;left:50%;transform:translateX(-50%);
-  display:flex;gap:8px;align-items:flex-end;pointer-events:auto}
-
-.skillSlot{position:relative;width:72px;height:72px;
-  background:rgba(12,24,18,.94);border:2px solid #2d6a4f;border-radius:8px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-  cursor:pointer;transition:all .15s;overflow:hidden;backdrop-filter:blur(4px);box-shadow:0 4px 14px rgba(0,0,0,.4)}
-.skillSlot:hover{border-color:#38bdf8;background:rgba(18,36,28,.98);transform:translateY(-2px);box-shadow:0 6px 18px rgba(56,189,248,.3)}
-.skillSlot.ulti{border-color:#6b4a15;background:rgba(20,15,5,.92)}
-.skillSlot.ulti:hover{border-color:#c08a20}
-.skillSlot.on-cd{opacity:.6}
-.skillSlot.not-learned{opacity:.35}
-.skillSlot.locked{opacity:.2;pointer-events:none}
-
-.sk-key{position:absolute;top:3px;left:5px;font:800 10px monospace;color:#7aa8d4;opacity:.7}
-.sk-name{font:700 11px sans-serif;color:#dce8f0;text-align:center;line-height:1.2;margin-top:6px}
-.sk-lv{font:600 9px monospace;color:#e4c34e}
-.sk-cd{font:800 16px monospace;color:#ff6b6b;position:absolute;inset:0;
-  display:flex;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.5);border-radius:4px}
-.sk-cd:empty{display:none}
-
-.sp-text{margin-left:8px;padding:6px 12px;
-  background:rgba(60,50,10,.9);border:2px solid #a89030;border-radius:4px;
-  font:700 12px monospace;color:#f0d860;white-space:nowrap;
-  animation:spPulse 1s ease infinite}
-.sp-text:empty{display:none}
-
-@keyframes spPulse{0%,100%{opacity:1}50%{opacity:.6}}
-
-/* ─── OVERLAYS ─── */
-.overlay{position:absolute;z-index:40;inset:0;display:grid;place-items:center;
-  padding:18px;background:rgba(2,4,8,.82);backdrop-filter:blur(3px)}
-
-.card{width:min(92vw,650px);padding:30px;
-  border:2px solid #1e3348;border-radius:12px;
-  background:linear-gradient(180deg,#0c1520,#070d16);
-  box-shadow:0 12px 48px rgba(0,0,0,.7);text-align:center;overflow:hidden;position:relative}
-.startCard{padding:0 0 28px!important;max-width:680px}
-.conceptBanner{width:100%;height:230px;position:relative;overflow:hidden;border-bottom:2px solid #38bdf8}
-.conceptImg{width:100%;height:100%;object-fit:cover;object-position:center 65%;
-  image-rendering:pixelated;image-rendering:crisp-edges;
-  transform:scale(1.02);transition:transform .4s ease}
-.conceptBanner:hover .conceptImg{transform:scale(1.05)}
-.bannerOverlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,23,42,0.1) 0%,rgba(12,21,32,0.95) 100%)}
-
-.card.small{width:min(80vw,380px);padding:24px}
-.wide{width:min(94vw,920px)}
-
-.eyebrow{font-size:11px;letter-spacing:3px;font-weight:800;color:#facc15;text-transform:uppercase;margin-top:14px}
-.card h1{margin:8px 0 12px;font-size:28px;
-  background:linear-gradient(135deg,#fef08a,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.card p{font-size:13px;line-height:1.7;color:#94a3b8;padding:0 24px}
-
-.card button{font:700 15px monospace;padding:12px 36px;
-  border:2px solid #38bdf8;border-radius:8px;
-  background:linear-gradient(180deg,#0284c7,#0369a1);
-  color:#f0f9ff;cursor:pointer;transition:all .2s;
-  box-shadow:0 4px 16px rgba(2,132,199,.4);margin-top:6px}
-.card button:hover{border-color:#7dd3fc;background:linear-gradient(180deg,#0ea5e9,#0284c7);
-  color:#ffffff;transform:translateY(-2px);box-shadow:0 6px 22px rgba(56,189,248,.6)}
-
-.hint{margin-top:16px;font-size:11px;color:#64748b;letter-spacing:.5px}
-
-/* ─── HERO SELECT ─── */
-.heroChoices{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:18px}
-.heroChoice{min-height:175px!important;padding:12px 10px!important;
-  background:rgba(10,18,28,.9)!important;border:2px solid #1e3348!important;border-radius:6px!important;
-  color:#e8eef2!important;box-shadow:0 4px 16px rgba(0,0,0,.3)!important;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
-  transition:all .2s!important}
-.heroChoice:hover{border-color:#e4a832!important;background:rgba(15,25,40,.95)!important;
-  transform:translateY(-3px)!important;box-shadow:0 8px 24px rgba(0,0,0,.4)!important}
-.heroPortrait{width:68px;height:68px;border-radius:10px;
-  background-size:400% 300%;background-position:0% 0%;background-repeat:no-repeat;
-  image-rendering:pixelated;image-rendering:crisp-edges;
-  filter:drop-shadow(0 4px 8px rgba(0,0,0,.6));border:2px solid #334155;
-  background-color:#1e293b;margin-bottom:6px;flex-shrink:0}
-.heroChoice b{font-size:16px}
-.heroChoice small{font-size:10px;line-height:1.4;color:#7a98b0}
-.heroChoice .sk-list{font-size:9px;color:#5a8aac;margin-top:2px;line-height:1.5}
-
-/* ─── SKILL UP CHOICES ─── */
-.choices{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}
-.skillChoice{min-height:130px!important;padding:14px!important;
-  background:rgba(10,18,28,.9)!important;border:2px solid #1e3348!important;border-radius:6px!important;
-  color:#e8eef2!important;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
-  transition:all .2s!important;box-shadow:0 3px 12px rgba(0,0,0,.3)!important}
-.skillChoice.available{border-color:#2a5080!important;cursor:pointer}
-.skillChoice.available:hover{border-color:#e4a832!important;background:rgba(20,30,10,.9)!important;
-  transform:translateY(-2px)!important}
-.skillChoice:disabled{opacity:.3;cursor:default}
-
-.sk-key-big{font:800 22px monospace;color:#e4a832;
-  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
-  border:2px solid #6b5a20;border-radius:6px;background:rgba(60,50,10,.4)}
-.skillChoice strong{font-size:14px;color:#c8dce8}
-.skillChoice small{font-size:10px;color:#7a98b0;line-height:1.4}
-.skillChoice span{font:600 11px monospace;color:#e4c34e}
-
-/* ─── SHOP ─── */
-.shopCard{text-align:left;max-height:94vh;overflow-y:auto}
-.shopHead{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
-.shopHead h1{margin-bottom:0}
-.shopHead>strong{font-size:22px;color:#f0c94d}
-
-.shopTabs{display:flex;gap:6px;margin-bottom:14px;border-bottom:2px solid #152030;padding-bottom:10px}
-.tabBtn{padding:8px 16px!important;font:700 12px monospace!important;
-  border:2px solid #1e3348!important;border-radius:4px!important;
-  background:rgba(10,18,28,.8)!important;color:#5a8aac!important;cursor:pointer}
-.tabBtn.active{border-color:#e4a832!important;color:#f0d860!important;background:rgba(40,30,5,.7)!important}
-.tabBtn:hover{border-color:#4a8ecf!important}
-
-.shopItems{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
-
-.shopItem{min-height:100px!important;padding:12px!important;text-align:left!important;
-  background:rgba(10,18,28,.9)!important;border:2px solid #1e3348!important;border-radius:6px!important;
-  color:#e8eef2!important;display:flex;flex-direction:column;align-items:flex-start;gap:6px;
-  transition:all .15s!important;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3)!important}
-.shopItem:hover{border-color:#4a8ecf!important;transform:translateY(-1px)!important}
-.shopItem strong{font-size:14px;color:#c8dce8}
-.shopItem strong small{font-size:10px;color:#6a90a8;font-weight:400}
-.shopItem span{font-size:10px;color:#7a98b0;line-height:1.5}
-.shopItem em{font-size:12px;font-style:normal;color:#f0c94d;font-weight:700}
-.shopItem .mats{color:#5a8aac;font-size:9px;line-height:1.4}
-.shopItem.recipe{border-color:#1a2838!important}
-.shopItem.canCraft{border-color:#3a7030!important;background:rgba(10,25,15,.9)!important}
-.shopItem.canCraft:hover{border-color:#60b050!important}
-.shopItem .sell{color:#d05050;font-size:9px;margin-top:auto}
-
-.invItem{min-height:70px!important;padding:10px!important;text-align:left!important;
-  background:rgba(10,18,28,.9)!important;border:2px solid #1e3348!important;border-radius:6px!important;
-  color:#e8eef2!important;display:flex;flex-direction:column;gap:4px;cursor:pointer;
-  transition:all .15s!important;box-shadow:0 2px 8px rgba(0,0,0,.2)!important}
-.invItem:hover{border-color:#c04040!important}
-.invItem.empty{opacity:.25;cursor:default}
-.invItem strong{font-size:12px}
-.invItem small{font-size:9px;color:#7a98b0;line-height:1.3}
-.invItem.selected{border-color:#e4a832!important;background:rgba(40,30,10,.95)!important;box-shadow:0 0 14px rgba(228,168,50,.5)!important}
-
-/* ─── CONFIRM SELL UI ─── */
-.sellConfirmBox{margin-top:14px;padding:14px;background:rgba(18,26,38,.95);border:2px solid #e4a832;border-radius:8px;
-  display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 6px 20px rgba(0,0,0,.5)}
-.sellConfirmInfo{display:flex;flex-direction:column;gap:4px}
-.sellConfirmInfo strong{font-size:14px;color:#f0d860}
-.sellConfirmInfo span{font-size:11px;color:#94a3b8}
-.sellConfirmBtns{display:flex;gap:8px}
-.confirmSellBtn{padding:8px 14px!important;background:#b91c1c!important;border:2px solid #ef4444!important;
-  color:#ffffff!important;font-weight:700!important;border-radius:6px!important;cursor:pointer!important;transition:all .15s}
-.confirmSellBtn:hover{background:#dc2626!important;border-color:#f87171!important;transform:scale(1.03)}
-.cancelSellBtn{padding:8px 14px!important;background:#334155!important;border:2px solid #64748b!important;
-  color:#cbd5e1!important;border-radius:6px!important;cursor:pointer!important}
-.cancelSellBtn:hover{background:#475569!important}
-
-/* ─── FLOATING DAMAGE TEXT ─── */
-.dmgText{position:absolute;z-index:40;font:900 16px monospace;text-shadow:0 2px 6px rgba(0,0,0,.9);
-  pointer-events:none;animation:floatUp .8s ease-out forwards}
-.dmgText.crit{font-size:22px;color:#fde047!important;text-shadow:0 0 10px rgba(250,204,21,.8)}
-@keyframes floatUp{
-  0%{opacity:1;transform:translate(-50%,0) scale(1)}
-  50%{opacity:1;transform:translate(-50%,-24px) scale(1.15)}
-  100%{opacity:0;transform:translate(-50%,-45px) scale(.8)}
+/* ─── PIXEL ART DESIGN SYSTEM TOKENS ─── */
+:root {
+  --px-border-outer: #1c130b;
+  --px-border-gold-hi: #eab308;
+  --px-border-gold-lo: #78350f;
+  --px-bg-dark: #0b141e;
+  --px-bg-card: #0e1a26;
+  --px-gold: #fde047;
+  --px-blue: #38bdf8;
+  --px-green: #4ade80;
+  --px-red: #f87171;
 }
 
-/* ─── MONSTER FLOATING HORIZONTAL HP BARS ─── */
-#hpBars{position:absolute;inset:0;pointer-events:none;z-index:25;overflow:hidden}
-.mHpBar{position:absolute;width:46px;height:6px;background:rgba(9,13,22,.85);
-  border:1.5px solid #1e293b;border-radius:3px;transform:translate(-50%,-100%);
-  overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.75)}
-.mHpFill{height:100%;background:#22c55e;transition:width .08s ease-out}
+/* ─── HUD (COMPACT HEADER) ─── */
+#hud {
+  position: absolute; z-index: 30;
+  inset: 8px 10px auto;
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  gap: 8px; align-items: start;
+  pointer-events: none;
+}
 
-/* ─── NOTICE ─── */
-#notice{position:absolute;z-index:35;top:140px;left:50%;
-  transform:translate(-50%,-8px);
-  padding:10px 24px;border:2px solid #6b5a20;border-radius:6px;
-  background:rgba(8,12,20,.94);backdrop-filter:blur(4px);
-  color:#f0d860;font:700 15px sans-serif;
-  opacity:0;transition:.2s;pointer-events:none}
-#notice.show{opacity:1;transform:translate(-50%,0)}
+.hudBox {
+  padding: 6px 10px;
+  background: rgba(10, 18, 26, 0.92);
+  border: 2px solid #2d4536;
+  box-shadow: inset 1px 1px 0 #3b5a47, inset -1px -1px 0 #13241b, 0 4px 10px rgba(0, 0, 0, 0.6);
+  font-size: 11px; line-height: 1.45;
+  display: flex; flex-direction: column; gap: 2px;
+  backdrop-filter: blur(4px);
+}
+.hudBox.left { justify-self: start; min-width: 190px; }
+.hudBox.right { justify-self: end; min-width: 200px; }
+.hudBox > b:first-child {
+  font-size: 14px; color: var(--px-gold); letter-spacing: 0.5px;
+  text-shadow: 1px 1px 0 #000;
+}
+.hudBox i { font-style: normal; color: var(--px-blue); font-weight: 700; }
 
-/* ─── DEAD OVERLAY ─── */
-#deadOverlay{z-index:38;background:rgba(30,5,5,.6)}
-#deadOverlay .card{border-color:#802020}
-#deadOverlay h1{-webkit-text-fill-color:#ff6b6b;color:#ff6b6b}
-#deadOverlay b{font-size:36px;color:#ff4444}
+/* ─── RETRO PIXEL HP BARS ─── */
+.bar {
+  height: 8px; background: #081119;
+  border: 1px solid #1e3347;
+  box-shadow: inset 1px 1px 0 #000;
+  margin: 2px 0 4px; overflow: hidden;
+}
+.bar > div {
+  height: 100%; width: 100%;
+  background: linear-gradient(90deg, #0284c7, #38bdf8);
+  box-shadow: inset 0 1px 0 #bae6fd;
+  transition: width 0.15s ease-out;
+}
+.bar.hero > div {
+  background: linear-gradient(90deg, #16a34a, #4ade80);
+  box-shadow: inset 0 1px 0 #bbf7d0;
+}
 
-/* ─── VICTORY ─── */
-#victory .card{border-color:#6b5a20}
-#victory h1{font-size:40px;-webkit-text-fill-color:unset;color:#f0d860;
-  text-shadow:0 0 30px rgba(240,200,60,.3)}
+/* ─── COMPACT PIXEL HUD BUTTONS (상점, 스킬) ─── */
+.hudButtons { display: flex; gap: 6px; justify-self: center; align-self: start; pointer-events: auto; }
+.hudAction {
+  padding: 6px 12px;
+  font: 700 11px monospace;
+  color: #fff; cursor: pointer;
+  border: 2px solid #0369a1;
+  background: #0284c7;
+  box-shadow: inset 1px 1px 0 #7dd3fc, inset -1px -1px 0 #075985, 0 3px 0 #032b42;
+  transition: transform 0.08s, filter 0.08s;
+}
+.hudAction small { opacity: 0.8; margin-left: 2px; font-weight: normal; }
+.hudAction:hover { filter: brightness(1.12); }
+.hudAction:active { transform: translateY(2px); box-shadow: inset 1px 1px 0 #075985; }
+
+.skillAction {
+  border-color: #854d0e;
+  background: #ca8a04;
+  box-shadow: inset 1px 1px 0 #fef08a, inset -1px -1px 0 #713f12, 0 3px 0 #3a2007;
+  color: #fff;
+}
+.skillAction:hover { filter: brightness(1.12); }
+
+/* ─── COMPACT PIXEL SKILL HOTBAR (인게임 하단) ─── */
+#skillBar {
+  position: absolute; z-index: 30;
+  bottom: 12px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 6px; align-items: flex-end;
+  pointer-events: auto;
+}
+
+.skillSlot {
+  position: relative;
+  width: 52px; height: 52px;
+  background: rgba(11, 20, 30, 0.94);
+  border: 2px solid #334e68;
+  box-shadow: inset 1px 1px 0 #486581, inset -1px -1px 0 #102a43, 0 4px 8px rgba(0, 0, 0, 0.5);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; overflow: hidden;
+  transition: transform 0.08s, border-color 0.1s;
+}
+.skillSlot:hover {
+  border-color: #38bdf8;
+  transform: translateY(-2px);
+  box-shadow: inset 1px 1px 0 #7dd3fc, inset -1px -1px 0 #0284c7, 0 6px 12px rgba(56, 189, 248, 0.3);
+}
+.skillSlot:active { transform: translateY(1px); }
+.skillSlot.ulti {
+  border-color: #854d0e;
+  background: rgba(28, 20, 8, 0.94);
+}
+.skillSlot.ulti:hover { border-color: #facc15; }
+.skillSlot.on-cd { opacity: 0.55; }
+.skillSlot.not-learned { opacity: 0.3; }
+.skillSlot.locked { opacity: 0.15; pointer-events: none; }
+
+.sk-key {
+  position: absolute; top: 2px; left: 4px;
+  font: 800 9px monospace; color: #94a3b8;
+}
+.sk-name {
+  font: 700 10px sans-serif; color: #f1f5f9;
+  text-align: center; line-height: 1.15; margin-top: 5px;
+  text-shadow: 1px 1px 0 #000;
+}
+.sk-lv { font: 700 8px monospace; color: var(--px-gold); margin-top: 1px; }
+.sk-cd {
+  font: 900 14px monospace; color: #ff6b6b;
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+}
+.sk-cd:empty { display: none; }
+
+.sp-text {
+  margin-left: 6px; padding: 4px 8px;
+  background: #713f12; border: 2px solid #ca8a04;
+  box-shadow: inset 1px 1px 0 #fef08a, 0 2px 6px rgba(0, 0, 0, 0.5);
+  font: 700 10px monospace; color: #fef08a; white-space: nowrap;
+  animation: spPulse 1s ease infinite;
+}
+.sp-text:empty { display: none; }
+@keyframes spPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
 /* ─── TOUCH JOYSTICK (MOBILE) ─── */
-.touchJoystick{position:absolute;z-index:35;bottom:20px;left:20px;
-  width:110px;height:110px;background:rgba(15,25,40,.65);
-  border:2px solid rgba(120,160,210,.4);border-radius:50%;
-  touch-action:none;backdrop-filter:blur(4px);
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 4px 20px rgba(0,0,0,.5);user-select:none;-webkit-user-select:none}
-.joystickKnob{width:46px;height:46px;
-  background:linear-gradient(135deg,#38bdf8,#0284c7);
-  border:2px solid #e0f2fe;border-radius:50%;
-  box-shadow:0 2px 8px rgba(0,0,0,.5);
-  pointer-events:none;transition:transform .04s ease-out}
-
-/* ─── RESPONSIVE ─── */
-@media(max-width:1024px){
-  .heroChoices{grid-template-columns:repeat(3,1fr)}
-  .choices{grid-template-columns:repeat(2,1fr)}
+.touchJoystick {
+  position: absolute; z-index: 35;
+  bottom: 14px; left: 14px;
+  width: 90px; height: 90px;
+  background: rgba(14, 26, 38, 0.6);
+  border: 2px solid rgba(148, 163, 184, 0.35);
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.4);
+  border-radius: 50%;
+  touch-action: none; backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center;
 }
-@media(max-width:768px){
-  .heroChoices{grid-template-columns:repeat(2,1fr)}
-  .shopItems{grid-template-columns:repeat(2,1fr)}
-  .hudBox.right{display:none}
-  .hudBox.left{min-width:200px;font-size:10px}
-  .hudButtons{justify-self:end}
-  #skillBar{bottom:16px;left:auto;right:16px;transform:none}
-  .skillSlot{width:52px;height:52px}
-  .sk-name{font-size:9px!important}
-  .card h1{font-size:26px}
-  .card{padding:20px 14px}
-  .wide{width:96vw}
-}
-@media(max-width:480px){
-  .heroChoices{grid-template-columns:1fr}
-  .shopItems{grid-template-columns:1fr}
-  .choices{grid-template-columns:1fr}
-  .skillSlot{width:46px;height:46px}
-  .sk-name{font-size:8px!important}
-  .hudBox.left{min-width:150px;font-size:9px;padding:8px 10px}
-  .hudAction{padding:6px 8px;font-size:10px}
-  .touchJoystick{width:88px;height:88px;bottom:14px;left:14px}
-  .joystickKnob{width:36px;height:36px}
+.joystickKnob {
+  width: 38px; height: 38px;
+  background: radial-gradient(circle at 35% 35%, #7dd3fc, #0284c7);
+  border: 2px solid #bae6fd;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  pointer-events: none; transition: transform 0.04s ease-out;
 }
 
-/* ─── MOBILE PORTRAIT SPECIFIC (PREVENT JOYSTICK & SKILLBAR OVERLAP) ─── */
-@media (max-width: 600px) and (orientation: portrait){
-  #skillBar{
-    bottom:14px;
-    right:12px;
-    left:auto;
-    transform:none;
-    display:grid;
-    grid-template-columns:repeat(2,48px);
-    gap:6px;
+/* ─── NOTICE & OVERLAYS ─── */
+#notice {
+  position: absolute; z-index: 35; top: 75px; left: 50%;
+  transform: translate(-50%, -6px);
+  padding: 6px 16px;
+  border: 2px solid #b45309; background: rgba(15, 23, 42, 0.95);
+  box-shadow: inset 1px 1px 0 #fde047, 0 4px 12px rgba(0, 0, 0, 0.6);
+  color: var(--px-gold); font: 700 13px sans-serif;
+  opacity: 0; transition: 0.15s; pointer-events: none;
+}
+#notice.show { opacity: 1; transform: translate(-50%, 0); }
+
+.overlay {
+  position: absolute; z-index: 40; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 12px; background: rgba(3, 7, 14, 0.82);
+  backdrop-filter: blur(2px);
+}
+
+/* ─── RETRO PIXEL CARD FRAME ─── */
+.card {
+  width: min(94vw, 560px);
+  padding: 18px 20px;
+  background: var(--px-bg-card);
+  border: 3px solid #3c2a1a;
+  box-shadow:
+    inset 2px 2px 0 #8b5a2b,
+    inset -2px -2px 0 #180e07,
+    0 8px 28px rgba(0, 0, 0, 0.75);
+  text-align: center; position: relative;
+  max-height: 90vh; overflow-y: auto;
+}
+.card.wide { width: min(96vw, 760px); }
+.card.small { width: min(85vw, 340px); padding: 16px; }
+
+.eyebrow {
+  font-size: 10px; letter-spacing: 2px; font-weight: 800;
+  color: var(--px-gold); text-transform: uppercase;
+}
+.card h1 {
+  margin: 4px 0 10px; font-size: 22px; font-weight: 800;
+  color: #fff; text-shadow: 2px 2px 0 #000;
+}
+.card p {
+  font-size: 12px; line-height: 1.5; color: #94a3b8;
+  margin-bottom: 12px; padding: 0 10px;
+}
+
+/* ─── RETRO PIXEL BUTTON ─── */
+.card button, #shopClose, #skillUpClose, #resumeBtn, #restartBtn, #victoryBtn {
+  font: 700 13px monospace;
+  padding: 8px 24px;
+  color: #fff; cursor: pointer;
+  border: 2px solid #032b42;
+  background: #0284c7;
+  box-shadow: inset 1px 1px 0 #7dd3fc, inset -1px -1px 0 #0369a1, 0 3px 0 #031e30;
+  transition: transform 0.08s, filter 0.08s;
+  margin-top: 8px;
+}
+.card button:hover { filter: brightness(1.15); }
+.card button:active { transform: translateY(2px); box-shadow: inset 1px 1px 0 #0369a1; }
+
+/* ─── START SCREEN ─── */
+.startCard { padding: 0 0 18px !important; max-width: 520px; }
+.conceptBanner {
+  width: 100%; height: 160px; position: relative; overflow: hidden;
+  border-bottom: 3px solid #3c2a1a;
+}
+.conceptImg {
+  width: 100%; height: 100%; object-fit: cover; object-position: center 60%;
+}
+.bannerOverlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, rgba(14, 26, 38, 0.95) 100%);
+}
+#startBtn {
+  background: #16a34a !important; border-color: #052e16 !important;
+  box-shadow: inset 1px 1px 0 #86efac, inset -1px -1px 0 #15803d, 0 3px 0 #021a0c !important;
+  font-size: 14px !important; padding: 9px 28px !important;
+}
+.hint { margin-top: 10px; font-size: 10px; color: #64748b; line-height: 1.3; }
+
+/* ─── COMPACT HERO SELECT (한눈에 들어오는 5영웅 카드) ─── */
+.heroChoices {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+}
+.heroChoice {
+  min-height: 128px !important;
+  padding: 8px 5px !important;
+  background: #09131d !important;
+  border: 2px solid #233548 !important;
+  box-shadow: inset 1px 1px 0 #3b5066, inset -1px -1px 0 #050a0f, 0 3px 0 rgba(0, 0, 0, 0.5) !important;
+  color: #e2e8f0 !important;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  gap: 3px; cursor: pointer;
+  transition: transform 0.08s, border-color 0.1s !important;
+  margin-top: 0 !important;
+}
+.heroChoice:hover {
+  border-color: #facc15 !important;
+  background: #0e1e2d !important;
+  transform: translateY(-2px) !important;
+  box-shadow: inset 1px 1px 0 #fde047, inset -1px -1px 0 #854d0e, 0 5px 0 rgba(0, 0, 0, 0.6) !important;
+}
+.heroPortrait {
+  width: 44px; height: 44px;
+  background-size: 400% 300%; background-position: 0% 0%; background-repeat: no-repeat;
+  border: 2px solid #334e68;
+  box-shadow: inset 1px 1px 0 #486581, inset -1px -1px 0 #102a43;
+  background-color: #0f172a; margin-bottom: 2px; flex-shrink: 0;
+}
+.heroChoice b { font-size: 12px; line-height: 1.2; }
+.heroChoice small { font-size: 9px; line-height: 1.3; color: #94a3b8; text-align: center; }
+.heroChoice .sk-list { font-size: 8px; color: #38bdf8; margin-top: 2px; line-height: 1.25; }
+
+/* ─── COMPACT SKILL UP MODAL (4열 핏) ─── */
+.choices {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+}
+.skillChoice {
+  min-height: 95px !important;
+  padding: 8px 6px !important;
+  background: #09131d !important;
+  border: 2px solid #233548 !important;
+  box-shadow: inset 1px 1px 0 #3b5066, inset -1px -1px 0 #050a0f !important;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; cursor: default; margin-top: 0 !important;
+}
+.skillChoice.available {
+  border-color: #854d0e !important; cursor: pointer;
+}
+.skillChoice.available:hover {
+  border-color: #facc15 !important;
+  background: #142416 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: inset 1px 1px 0 #86efac, 0 4px 0 #052e16 !important;
+}
+.skillChoice:disabled { opacity: 0.35; cursor: not-allowed; }
+.sk-key-big {
+  font: 900 15px monospace; color: var(--px-gold);
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid #854d0e; background: #2e1d08;
+  box-shadow: inset 1px 1px 0 #ca8a04;
+}
+.skillChoice strong { font-size: 11px; color: #f1f5f9; }
+.skillChoice small { font-size: 9px; color: #94a3b8; line-height: 1.25; text-align: center; }
+.skillChoice span { font: 700 9px monospace; color: var(--px-gold); }
+
+/* ─── COMPACT SHOP MODAL ─── */
+.shopCard { width: min(96vw, 680px) !important; text-align: left; padding: 14px 16px !important; }
+.shopHead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.shopHead h1 { margin: 0; font-size: 18px; }
+.shopHead > strong { font-size: 16px; color: var(--px-gold); }
+
+.shopTabs {
+  display: flex; gap: 4px; margin-bottom: 8px;
+  border-bottom: 2px solid #233548; padding-bottom: 6px;
+}
+.tabBtn {
+  padding: 5px 12px !important; font: 700 11px monospace !important;
+  border: 2px solid #233548 !important;
+  background: #09131d !important; color: #64748b !important;
+  cursor: pointer; margin-top: 0 !important;
+}
+.tabBtn.active {
+  border-color: #ca8a04 !important; color: #fde047 !important;
+  background: #2e1d08 !important;
+  box-shadow: inset 1px 1px 0 #fef08a !important;
+}
+
+.shopItems {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 6px; margin: 8px 0; max-height: 52vh; overflow-y: auto;
+}
+
+.shopItem {
+  min-height: 72px !important; padding: 6px 8px !important;
+  background: #09131d !important; border: 2px solid #233548 !important;
+  box-shadow: inset 1px 1px 0 #3b5066, inset -1px -1px 0 #050a0f !important;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  cursor: pointer; margin-top: 0 !important;
+}
+.shopItem:hover {
+  border-color: #38bdf8 !important; transform: translateY(-1px) !important;
+}
+.shopItem strong { font-size: 11px; color: #f1f5f9; display: flex; justify-content: space-between; width: 100%; }
+.shopItem strong small { font-size: 9px; color: #64748b; font-weight: normal; }
+.shopItem span { font-size: 9px; color: #94a3b8; line-height: 1.25; }
+.shopItem em { font-size: 10px; font-style: normal; color: var(--px-gold); font-weight: 700; margin-top: auto; }
+.shopItem .mats { color: #38bdf8; font-size: 8px; line-height: 1.2; }
+.shopItem.canCraft { border-color: #16a34a !important; background: #0b1f13 !important; }
+.shopItem.canCraft:hover { border-color: #4ade80 !important; }
+
+.invItem {
+  min-height: 54px !important; padding: 6px 8px !important;
+  background: #09131d !important; border: 2px solid #233548 !important;
+  box-shadow: inset 1px 1px 0 #3b5066 !important;
+  display: flex; flex-direction: column; gap: 2px;
+  cursor: pointer; margin-top: 0 !important;
+}
+.invItem:hover { border-color: #ef4444 !important; }
+.invItem.empty { opacity: 0.25; cursor: default; }
+.invItem strong { font-size: 11px; }
+.invItem small { font-size: 8px; color: #94a3b8; }
+.invItem.selected {
+  border-color: #facc15 !important; background: #261b07 !important;
+  box-shadow: inset 0 0 8px rgba(250, 204, 21, 0.4) !important;
+}
+
+.sellConfirmBox {
+  margin-top: 8px; padding: 8px 12px;
+  background: #141c26; border: 2px solid #ca8a04;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.sellConfirmInfo strong { font-size: 12px; color: var(--px-gold); }
+.sellConfirmInfo span { font-size: 10px; color: #94a3b8; }
+.confirmSellBtn {
+  padding: 5px 10px !important; background: #b91c1c !important;
+  border: 1px solid #ef4444 !important; font-size: 10px !important; margin: 0 !important;
+}
+.cancelSellBtn {
+  padding: 5px 10px !important; background: #334155 !important;
+  border: 1px solid #64748b !important; font-size: 10px !important; margin: 0 !important;
+}
+
+/* ─── FLOATING DAMAGE & HP BARS ─── */
+.dmgText {
+  position: absolute; z-index: 40;
+  font: 900 13px monospace; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000;
+  pointer-events: none; animation: floatUp 0.7s ease-out forwards;
+}
+.dmgText.crit { font-size: 17px; color: #fde047 !important; text-shadow: 0 0 8px rgba(250, 204, 21, 0.8); }
+@keyframes floatUp {
+  0% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -32px); }
+}
+
+#hpBars { position: absolute; inset: 0; pointer-events: none; z-index: 25; overflow: hidden; }
+.mHpBar {
+  position: absolute; width: 38px; height: 5px;
+  background: #000; border: 1px solid #1e293b;
+  transform: translate(-50%, -100%); overflow: hidden;
+}
+.mHpFill { height: 100%; background: #22c55e; transition: width 0.08s ease-out; }
+
+/* ─── RESPONSIVE OPTIMIZATION (DESKTOP / TABLET / MOBILE) ─── */
+@media (max-width: 900px) {
+  .heroChoices { gap: 4px; }
+  .heroChoice { min-height: 115px !important; padding: 6px 3px !important; }
+  .heroPortrait { width: 38px; height: 38px; }
+  .heroChoice b { font-size: 11px; }
+  .heroChoice small { font-size: 8px; }
+  .heroChoice .sk-list { display: none; }
+}
+
+@media (max-width: 768px) {
+  #hud { inset: 6px 8px auto; gap: 6px; }
+  .hudBox.right { display: none; }
+  .hudBox.left { min-width: 170px; font-size: 10px; padding: 5px 8px; }
+  .hudAction { padding: 5px 9px; font-size: 10px; }
+  
+  .card { padding: 14px; max-width: 94vw; }
+  .card h1 { font-size: 18px; margin: 3px 0 6px; }
+  
+  .shopItems { grid-template-columns: repeat(2, 1fr); max-height: 48vh; }
+  
+  #skillBar { bottom: 10px; gap: 4px; }
+  .skillSlot { width: 44px; height: 44px; }
+  .sk-name { font-size: 8px !important; margin-top: 3px; }
+  .sk-key { font-size: 8px; top: 1px; left: 3px; }
+  .sk-lv { font-size: 7px; }
+  
+  .choices { grid-template-columns: repeat(2, 1fr); gap: 5px; }
+  .skillChoice { min-height: 80px !important; padding: 6px !important; }
+}
+
+@media (max-width: 520px) {
+  /* 모바일 세로/가로 공통: 5영웅 카드가 스크롤 없이 한눈에 */
+  .heroChoices {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3px;
   }
-  .skillSlot{width:48px;height:48px}
-  .touchJoystick{
-    width:86px;
-    height:86px;
-    bottom:14px;
-    left:14px;
+  .heroChoice {
+    min-height: 98px !important;
+    padding: 4px 2px !important;
   }
-  .joystickKnob{width:36px;height:36px}
-  .sp-text{
-    position:absolute;
-    top:-32px;
-    right:0;
-    margin-left:0;
-    padding:4px 8px;
-    font-size:10px;
-    white-space:nowrap;
+  .heroPortrait { width: 32px; height: 32px; }
+  .heroChoice b { font-size: 9px; }
+  .heroChoice small { display: none; }
+  
+  .card { padding: 12px 10px; }
+  .card h1 { font-size: 16px; }
+  .eyebrow { font-size: 8px; }
+  
+  .shopItems { grid-template-columns: 1fr; max-height: 44vh; }
+  .shopItem { min-height: 56px !important; }
+  
+  .touchJoystick { width: 78px; height: 78px; bottom: 10px; left: 10px; }
+  .joystickKnob { width: 32px; height: 32px; }
+}
+
+/* ─── MOBILE PORTRAIT (스킬바와 조이스틱 겹침 방지) ─── */
+@media (max-width: 600px) and (orientation: portrait) {
+  #skillBar {
+    bottom: 10px; right: 10px; left: auto; transform: none;
+    display: grid; grid-template-columns: repeat(2, 42px);
+    gap: 4px;
+  }
+  .skillSlot { width: 42px; height: 42px; }
+  .touchJoystick { width: 76px; height: 76px; bottom: 10px; left: 10px; }
+  .joystickKnob { width: 30px; height: 30px; }
+  .sp-text {
+    position: absolute; top: -26px; right: 0;
+    margin-left: 0; padding: 3px 6px; font-size: 9px;
   }
 }
