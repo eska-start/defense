@@ -245,10 +245,10 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
   .heroChoices{grid-template-columns:repeat(2,1fr)}
   .shopItems{grid-template-columns:repeat(2,1fr)}
   .hudBox.right{display:none}
-  .hudBox.left{min-width:220px;font-size:10px}
+  .hudBox.left{min-width:200px;font-size:10px}
   .hudButtons{justify-self:end}
-  #skillBar{bottom:16px;left:auto;right:20px;transform:none}
-  .skillSlot{width:54px;height:54px}
+  #skillBar{bottom:16px;left:auto;right:16px;transform:none}
+  .skillSlot{width:52px;height:52px}
   .sk-name{font-size:9px!important}
   .card h1{font-size:26px}
   .card{padding:20px 14px}
@@ -260,8 +260,38 @@ body{touch-action:none;user-select:none;-webkit-user-select:none}
   .choices{grid-template-columns:1fr}
   .skillSlot{width:46px;height:46px}
   .sk-name{font-size:8px!important}
-  .hudBox.left{min-width:170px;font-size:9px}
+  .hudBox.left{min-width:150px;font-size:9px;padding:8px 10px}
   .hudAction{padding:6px 8px;font-size:10px}
-  .touchJoystick{width:96px;height:96px;bottom:14px;left:14px}
-  .joystickKnob{width:40px;height:40px}
+  .touchJoystick{width:88px;height:88px;bottom:14px;left:14px}
+  .joystickKnob{width:36px;height:36px}
+}
+
+/* ─── MOBILE PORTRAIT SPECIFIC (PREVENT JOYSTICK & SKILLBAR OVERLAP) ─── */
+@media (max-width: 600px) and (orientation: portrait){
+  #skillBar{
+    bottom:14px;
+    right:12px;
+    left:auto;
+    transform:none;
+    display:grid;
+    grid-template-columns:repeat(2,48px);
+    gap:6px;
+  }
+  .skillSlot{width:48px;height:48px}
+  .touchJoystick{
+    width:86px;
+    height:86px;
+    bottom:14px;
+    left:14px;
+  }
+  .joystickKnob{width:36px;height:36px}
+  .sp-text{
+    position:absolute;
+    top:-32px;
+    right:0;
+    margin-left:0;
+    padding:4px 8px;
+    font-size:10px;
+    white-space:nowrap;
+  }
 }
