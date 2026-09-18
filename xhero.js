@@ -16,53 +16,53 @@ const GATES=[new THREE.Vector3(0,0,-15),new THREE.Vector3(15,0,0),new THREE.Vect
 const GNAMES=['북','동','남','서'];
 const SK='QWER'.split('');
 
-/* ─── HEROES ─── */
+/* ─── HEROES (Title Concept Art Witchbrook & Little Witch Characters) ─── */
 const HEROES={
-  warrior:{name:'전사',color:0xd97706,hp:800,spd:5.5,dmg:55,rng:2.8,rate:.38,
-    desc:'근접 · 높은 체력 · 탱커',
+  warrior:{name:'모험가 레오',color:0x16a34a,hp:800,spd:5.5,dmg:55,rng:2.8,rate:.38,
+    desc:'근접 · 숏소드 & 버클러 · 씩씩한 소년 기사',
     skills:{
-      Q:{name:'충격파',desc:'주변 범위 피해',cd:[8,7,6,5],mul:[2,2.8,3.6,4.5],r:4.5,type:'aoe'},
-      W:{name:'방어 자세',desc:'받는 피해 감소',cd:[14,12,10,8],dur:[3,4,5,6],val:[.3,.4,.5,.6],type:'buff_def'},
-      E:{name:'도발',desc:'주변 적 끌어모음',cd:[12,11,10,9],r:[5,6,7,8],dur:[2,2.5,3,3.5],type:'taunt'},
-      R:{name:'대지진동',desc:'거대 범위 피해+기절',cd:[45,38,32],mul:[6,8,10],r:7,type:'aoe_stun',ulti:1}}},
-  mage:{name:'마법사',color:0x2563eb,hp:450,spd:5,dmg:70,rng:5.5,rate:.55,
-    desc:'원거리 · 광역 · 높은 스킬 피해',
+      Q:{name:'바람 베기',desc:'주변 범위 검격 피해',cd:[8,7,6,5],mul:[2,2.8,3.6,4.5],r:4.5,type:'aoe'},
+      W:{name:'수호 자세',desc:'받는 피해 대폭 감소',cd:[14,12,10,8],dur:[3,4,5,6],val:[.3,.4,.5,.6],type:'buff_def'},
+      E:{name:'도발의 함성',desc:'주변 적 끌어모음',cd:[12,11,10,9],r:[5,6,7,8],dur:[2,2.5,3,3.5],type:'taunt'},
+      R:{name:'용기의 일격',desc:'거대 지진파 충격+기절',cd:[45,38,32],mul:[6,8,10],r:7,type:'aoe_stun',ulti:1}}},
+  mage:{name:'마녀 엘리',color:0x38bdf8,hp:450,spd:5,dmg:70,rng:5.5,rate:.55,
+    desc:'원거리 · 아케인 오브 · 숲속의 큰모자 마녀',
     skills:{
-      Q:{name:'파이어볼',desc:'폭발 화염구',cd:[6,5,4.5,4],mul:[2.5,3.2,4,5],r:2.5,type:'proj_aoe'},
-      W:{name:'블리자드',desc:'범위 지속 피해+둔화',cd:[14,12,10,8],mul:[.8,1.2,1.6,2],r:4,dur:4,type:'zone'},
-      E:{name:'마나 실드',desc:'피해 흡수 보호막',cd:[16,14,12,10],val:[100,160,220,300],type:'shield_self'},
-      R:{name:'메테오',desc:'하늘에서 운석 낙하',cd:[50,42,35],mul:[8,11,14],r:5.5,type:'aoe',ulti:1}}},
-  ranger:{name:'궁수',color:0x16a34a,hp:500,spd:6.5,dmg:45,rng:7,rate:.22,
-    desc:'원거리 · 빠른 공격 · 긴 사거리',
+      Q:{name:'별빛 보주',desc:'폭발하는 마법 보주',cd:[6,5,4.5,4],mul:[2.5,3.2,4,5],r:2.5,type:'proj_aoe'},
+      W:{name:'프로스트 룬',desc:'범위 지속 눈보라+둔화',cd:[14,12,10,8],mul:[.8,1.2,1.6,2],r:4,dur:4,type:'zone'},
+      E:{name:'마나 쉴드',desc:'피해 흡수 마법 방어막',cd:[16,14,12,10],val:[100,160,220,300],type:'shield_self'},
+      R:{name:'에테르 메테오',desc:'밤하늘에서 별똥별 폭격',cd:[50,42,35],mul:[8,11,14],r:5.5,type:'aoe',ulti:1}}},
+  ranger:{name:'사수 로빈',color:0xeab308,hp:500,spd:6.5,dmg:45,rng:7,rate:.22,
+    desc:'원거리 · 롱보우 & 붉은망토 · 숲의 금발 사수',
     skills:{
-      Q:{name:'다중 사격',desc:'여러 적 동시 공격',cd:[7,6,5.5,5],cnt:[3,4,5,6],mul:[1,1.2,1.4,1.6],type:'multi'},
-      W:{name:'독화살',desc:'공격에 독 부여',cd:[10,9,8,7],dot:[5,8,12,16],dur:[4,5,6,7],type:'poison_buff'},
-      E:{name:'회피',desc:'회피율 증가',cd:[18,15,13,11],dur:[4,5,6,7],val:[.3,.4,.5,.6],type:'buff_eva'},
-      R:{name:'화살 비',desc:'넓은 범위 화살 비',cd:[45,38,32],mul:[5,7,10],r:6.5,type:'aoe',ulti:1}}},
-  assassin:{name:'암살자',color:0x9333ea,hp:420,spd:7,dmg:65,rng:2.2,rate:.30,
-    desc:'근접 · 높은 폭딜 · 은신',
+      Q:{name:'다중 사격',desc:'여러 적 동시 화살 사격',cd:[7,6,5.5,5],cnt:[3,4,5,6],mul:[1,1.2,1.4,1.6],type:'multi'},
+      W:{name:'숲의 독화살',desc:'공격에 지속 독 부여',cd:[10,9,8,7],dot:[5,8,12,16],dur:[4,5,6,7],type:'poison_buff'},
+      E:{name:'질풍 회피',desc:'이동속도 & 회피율 급증',cd:[18,15,13,11],dur:[4,5,6,7],val:[.3,.4,.5,.6],type:'buff_eva'},
+      R:{name:'화살 비',desc:'넓은 범위 화살 폭풍',cd:[45,38,32],mul:[5,7,10],r:6.5,type:'aoe',ulti:1}}},
+  assassin:{name:'방랑자 니나',color:0xf97316,hp:420,spd:7,dmg:65,rng:2.2,rate:.30,
+    desc:'근접 · 크리스탈 단검 · 땋은머리 여행자 마녀',
     skills:{
-      Q:{name:'단검 투척',desc:'원거리 단검 공격',cd:[5,4.5,4,3.5],mul:[2,2.5,3,3.8],type:'proj_single'},
-      W:{name:'은신',desc:'은신+다음 공격 강화',cd:[16,14,12,10],mul:[3,4,5,6],dur:[3,4,5,6],type:'stealth'},
-      E:{name:'급소 공격',desc:'치명타 확률 증가 (패시브)',cd:[0,0,0,0],val:[.08,.12,.16,.20],type:'passive'},
-      R:{name:'암살',desc:'대상에게 거대 피해',cd:[40,34,28],mul:[10,14,18],rng:3.5,type:'execute',ulti:1}}},
-  paladin:{name:'성기사',color:0xca8a04,hp:700,spd:5.2,dmg:50,rng:2.5,rate:.42,
-    desc:'근접 · 치유 · 수호탑 보호',
+      Q:{name:'단검 투척',desc:'원거리 크리스탈 단검',cd:[5,4.5,4,3.5],mul:[2,2.5,3,3.8],type:'proj_single'},
+      W:{name:'그림자 은신',desc:'은신+다음 기습 일격 강화',cd:[16,14,12,10],mul:[3,4,5,6],dur:[3,4,5,6],type:'stealth'},
+      E:{name:'급소 찌르기',desc:'치명타 확률 증가 (패시브)',cd:[0,0,0,0],val:[.08,.12,.16,.20],type:'passive'},
+      R:{name:'크리스탈 난무',desc:'대상에게 순간 폭딜 연타',cd:[40,34,28],mul:[10,14,18],rng:3.5,type:'execute',ulti:1}}},
+  paladin:{name:'꼬마 마녀 루루',color:0xdb2777,hp:700,spd:5.2,dmg:50,rng:2.5,rate:.42,
+    desc:'근접/치유 · 고대 마법책 & 성스러운 빛 · 핑크모자 마녀',
     skills:{
-      Q:{name:'신성 타격',desc:'피해+자신 회복',cd:[7,6,5.5,5],mul:[2,2.5,3,3.8],heal:[.5,.6,.7,.8],r:3.5,type:'holy'},
-      W:{name:'치유',desc:'자신 HP 회복',cd:[12,10,9,8],heal:[1.5,2,2.8,3.5],type:'heal'},
-      E:{name:'보호막',desc:'수호탑에 보호막',cd:[20,18,15,13],val:[150,250,350,500],type:'shield_tower'},
-      R:{name:'부활',desc:'사망 시 즉시 부활(1회)',cd:[90,75,60],type:'revive',ulti:1}}}
+      Q:{name:'성스러운 찬송',desc:'피해+자신 HP 회복',cd:[7,6,5.5,5],mul:[2,2.5,3,3.8],heal:[.5,.6,.7,.8],r:3.5,type:'holy'},
+      W:{name:'치유의 마법',desc:'자신 HP 대폭 회복',cd:[12,10,9,8],heal:[1.5,2,2.8,3.5],type:'heal'},
+      E:{name:'수호탑 보호막',desc:'수호탑에 강력한 마법막 부여',cd:[20,18,15,13],val:[150,250,350,500],type:'shield_tower'},
+      R:{name:'부활의 서약',desc:'사망 시 즉시 부활 (1회)',cd:[90,75,60],type:'revive',ulti:1}}}
 };
 
-/* ─── ENEMIES ─── */
+/* ─── ENEMIES (Forest Creatures) ─── */
 const ETYPES={
-  grunt :{name:'해골병사',hp:80,spd:1.6,dmg:10,gold:10,xp:12,h:1.4,color:0xe4e4e7},
-  runner:{name:'해골도적',hp:55,spd:3.0,dmg:7,gold:12,xp:15,h:1.25,color:0xf4f4f5},
-  tank  :{name:'해골전사',hp:280,spd:.9,dmg:25,gold:30,xp:38,h:1.9,color:0x475569},
-  caster:{name:'해골마법사',hp:140,spd:1.3,dmg:18,gold:28,xp:32,h:1.5,color:0x7e22ce},
-  brute :{name:'거대골렘',hp:500,spd:.7,dmg:40,gold:55,xp:60,h:2.4,color:0x334155},
-  boss  :{name:'보스 Pit Lord',hp:4000,spd:.55,dmg:75,gold:600,xp:500,h:3.8,color:0x991b1b}
+  grunt :{name:'숲속 슬라임',hp:80,spd:1.6,dmg:10,gold:10,xp:12,h:1.4,color:0x38bdf8},
+  runner:{name:'마법 버섯요괴',hp:55,spd:3.0,dmg:7,gold:12,xp:15,h:1.25,color:0xef4444},
+  tank  :{name:'가시덤불 바위병',hp:280,spd:.9,dmg:25,gold:30,xp:38,h:1.9,color:0x475569},
+  caster:{name:'어둠의 마녀',hp:140,spd:1.3,dmg:18,gold:28,xp:32,h:1.5,color:0x9333ea},
+  brute :{name:'고대 이끼골렘',hp:500,spd:.7,dmg:40,gold:55,xp:60,h:2.4,color:0x16a34a},
+  boss  :{name:'보스 Pit Lord',hp:4000,spd:.55,dmg:75,gold:600,xp:500,h:3.8,color:0xdc2626}
 };
 
 /* ─── ITEMS ─── */
@@ -99,13 +99,13 @@ renderer.domElement.id='gameCanvas';root.replaceChildren(renderer.domElement);
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x070b12);
-scene.fog=new THREE.FogExp2(0x070b12, 0.022);
+scene.fog=new THREE.FogExp2(0x070b12, 0.012);
 
 const camera=new THREE.OrthographicCamera(-14,14,10,-10,.1,100);
 camera.position.set(16,20,16);camera.lookAt(0,0,0);
 
-scene.add(new THREE.HemisphereLight(0xbae6fd,0x0f172a,1.9));
-const sun=new THREE.DirectionalLight(0xffedd5,2.6);
+scene.add(new THREE.HemisphereLight(0xffffff,0x334155,0.45));
+const sun=new THREE.DirectionalLight(0xfffbeb,0.6);
 sun.position.set(10,24,12);sun.castShadow=true;
 sun.shadow.mapSize.set(1024,1024);
 sun.shadow.camera.left=-24;sun.shadow.camera.right=24;sun.shadow.camera.top=24;sun.shadow.camera.bottom=-24;
@@ -120,119 +120,158 @@ function mat(c,e=0,rough=.4,metal=.4){
 function addBox(p,s,c){const m=new THREE.Mesh(new THREE.BoxGeometry(...s),mat(c));m.position.set(...p);m.castShadow=m.receiveShadow=true;scene.add(m);return m}
 function addCyl(p,r,h,c){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,12),mat(c));m.position.set(...p);m.castShadow=m.receiveShadow=true;scene.add(m);return m}
 
-/* ═══ 2.5D HD PIXEL ART SPRITE ENGINE ═══ */
+/* ═══ 2.5D HIGH-DETAIL HD PIXEL ART SPRITE ENGINE ═══ */
 const pixelTextureCache = {};
+const pixelDataUrlCache = {};
 
-function createPixelSpriteTexture(type) {
-  if (pixelTextureCache[type]) return pixelTextureCache[type];
+/* ═══ 16-BIT ANIMATED SPRITE SHEET ENGINE (Witchbrook & Little Witch) ═══ */
+const HERO_SHEETS = {
+  mage: './witch_ellie.png',
+  warrior: './knight_leo.png',
+  ranger: './archer_robin.png',
+  assassin: './witch_nina.png',
+  paladin: './witch_lulu.png'
+};
 
-  const cvs = document.createElement('canvas');
-  cvs.width = 64; cvs.height = 64;
-  const ctx = cvs.getContext('2d');
-  ctx.imageSmoothingEnabled = false;
+/* 👾 2D CUTE PIXEL ART MONSTERS & BOSS SPRITE ENGINE 👾 */
+const MONSTER_ASSETS = {
+  grunt: './monster_slime.png',
+  runner: './monster_mushroom.png',
+  tank: './monster_rock.png',
+  caster: './monster_witch.png',
+  brute: './monster_golem.png'
+};
+const BOSS_SHEET = './boss_demon.png';
 
-  const rect = (x, y, w, h, col) => {
-    ctx.fillStyle = col;
-    ctx.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h));
-  };
+const texLoader = new THREE.TextureLoader();
 
-  if (type === 'warrior') {
-    rect(20, 28, 24, 26, '#991b1b'); rect(18, 34, 28, 22, '#7f1d1d'); // Cape
-    rect(24, 26, 16, 20, '#475569'); rect(26, 28, 12, 16, '#94a3b8'); // Torso Armor
-    rect(26, 44, 5, 12, '#334155'); rect(33, 44, 5, 12, '#334155'); // Legs
-    rect(22, 10, 20, 18, '#fbbf24'); rect(24, 8, 16, 4, '#f59e0b'); // Golden Helm
-    rect(26, 18, 12, 4, '#1e293b'); rect(28, 19, 8, 2, '#ef4444'); // Visor Slit & Eyes
-    rect(44, 8, 4, 38, '#e2e8f0'); rect(42, 24, 8, 4, '#fbbf24'); // Greatsword
-    rect(12, 24, 10, 18, '#2563eb'); rect(14, 22, 6, 22, '#fbbf24'); // Shield
-  } else if (type === 'mage') {
-    rect(22, 26, 20, 26, '#1e40af'); rect(20, 34, 24, 20, '#1d4ed8'); rect(26, 28, 12, 24, '#3b82f6'); // Arcane Robe
-    rect(16, 20, 32, 6, '#312e81'); rect(20, 12, 24, 8, '#4338ca'); rect(24, 4, 16, 8, '#4338ca'); rect(28, -2, 8, 6, '#6366f1'); // Pointy Hat
-    rect(26, 18, 12, 3, '#fbbf24'); rect(26, 23, 4, 3, '#38bdf8'); rect(34, 23, 4, 3, '#38bdf8'); // Eyes
-    rect(46, 6, 4, 44, '#78350f'); rect(44, 2, 8, 8, '#06b6d4'); rect(45, 3, 6, 6, '#67e8f9'); // Orb Staff
-  } else if (type === 'ranger') {
-    rect(22, 24, 20, 24, '#15803d'); rect(20, 10, 24, 16, '#16a34a'); // Leaf Hood
-    rect(24, 18, 16, 6, '#fde047'); rect(26, 20, 3, 3, '#1e293b'); rect(35, 20, 3, 3, '#1e293b'); // Face
-    rect(24, 46, 6, 12, '#78350f'); rect(34, 46, 6, 12, '#78350f'); // Boots
-    rect(44, 10, 4, 34, '#854d0e'); rect(42, 6, 4, 6, '#ca8a04'); rect(42, 42, 4, 6, '#ca8a04'); rect(40, 12, 2, 30, '#f8fafc'); // Bow
-  } else if (type === 'assassin') {
-    rect(20, 24, 24, 26, '#3b0764'); rect(24, 10, 16, 16, '#581c87'); rect(24, 22, 16, 6, '#7e22ce'); // Hood & Scarf
-    rect(26, 16, 4, 3, '#a855f7'); rect(34, 16, 4, 3, '#a855f7'); // Purple Eyes
-    rect(12, 20, 4, 20, '#c084fc'); rect(13, 18, 2, 22, '#e9d5ff'); // Dagger L
-    rect(48, 20, 4, 20, '#c084fc'); rect(49, 18, 2, 22, '#e9d5ff'); // Dagger R
-  } else if (type === 'paladin') {
-    rect(24, 2, 16, 4, '#f59e0b'); rect(28, 0, 8, 8, '#fef08a'); // Sun Halo
-    rect(22, 12, 20, 16, '#ca8a04'); rect(26, 18, 12, 4, '#fef08a'); // Gold Helmet
-    rect(22, 26, 20, 22, '#eab308'); rect(20, 32, 24, 18, '#ffffff'); // White Cloak & Armor
-    rect(46, 10, 10, 14, '#fbbf24'); rect(49, 22, 4, 28, '#78350f'); // Holy Warhammer
-  } else if (type === 'grunt') {
-    rect(24, 10, 16, 14, '#e2e8f0'); rect(26, 16, 4, 4, '#0f172a'); rect(34, 16, 4, 4, '#0f172a'); // Skull
-    rect(26, 24, 12, 18, '#cbd5e1'); rect(26, 42, 4, 12, '#94a3b8'); rect(34, 42, 4, 12, '#94a3b8'); // Skeleton Body
-    rect(44, 16, 4, 26, '#64748b'); // Bone Sword
-  } else if (type === 'runner') {
-    rect(22, 12, 20, 14, '#f1f5f9'); rect(24, 16, 4, 4, '#ef4444'); rect(34, 16, 4, 4, '#ef4444'); // Red Eyes Skull
-    rect(20, 24, 24, 18, '#334155'); rect(12, 22, 4, 16, '#94a3b8'); rect(48, 22, 4, 16, '#94a3b8'); // Speed Daggers
-  } else if (type === 'tank') {
-    rect(20, 8, 24, 18, '#334155'); rect(24, 16, 16, 4, '#0284c7'); // Iron Helm
-    rect(20, 24, 24, 24, '#475569'); rect(8, 18, 14, 28, '#1e293b'); rect(10, 20, 10, 24, '#0284c7'); // Iron Tower Shield
-  } else if (type === 'caster') {
-    rect(22, 10, 20, 14, '#f8fafc'); rect(26, 14, 4, 4, '#a855f7'); rect(34, 14, 4, 4, '#a855f7'); // Necromancer
-    rect(20, 22, 24, 26, '#581c87'); rect(46, 6, 4, 42, '#334155'); rect(44, 2, 8, 8, '#c084fc'); // Purple Robe & Staff
-  } else if (type === 'brute') {
-    rect(16, 10, 32, 38, '#475569'); rect(20, 14, 24, 12, '#334155'); // Moss Stone Golem Body
-    rect(22, 18, 6, 4, '#fde047'); rect(36, 18, 6, 4, '#fde047'); rect(18, 24, 12, 10, '#15803d'); rect(34, 30, 14, 8, '#16a34a'); // Moss & Eye Cracks
-  } else if (type === 'boss') {
-    rect(16, 10, 32, 40, '#991b1b'); rect(14, 2, 8, 14, '#f59e0b'); rect(42, 2, 8, 14, '#f59e0b'); // Demonic Red Pit Lord
-    rect(22, 16, 6, 5, '#facc15'); rect(36, 16, 6, 5, '#facc15'); rect(18, 24, 28, 20, '#450a0a'); // Eyes & Armor
-    rect(46, 6, 14, 20, '#334155'); rect(48, 8, 10, 16, '#dc2626'); // Giant Battleaxe
-  } else if (type === 'tree') {
-    rect(28, 38, 8, 24, '#78350f'); // Tree Trunk
-    rect(16, 24, 32, 18, '#15803d'); rect(20, 14, 24, 16, '#16a34a'); rect(24, 4, 16, 14, '#22c55e'); rect(28, 8, 4, 4, '#86efac'); // Pine Canopy
-  } else if (type === 'tower') {
-    rect(18, 38, 28, 14, '#1e293b'); rect(20, 42, 24, 6, '#334155'); rect(22, 40, 20, 2, '#fbbf24'); // Base & Runes
-    rect(24, 20, 16, 20, '#0f172a'); rect(26, 24, 4, 6, '#38bdf8'); rect(34, 24, 4, 6, '#38bdf8'); // Shaft & Windows
-    rect(22, 16, 20, 6, '#f59e0b'); rect(24, 12, 4, 6, '#d97706'); rect(36, 12, 4, 6, '#d97706'); // Crown & Arches
-    rect(26, 2, 12, 12, '#06b6d4'); rect(28, 4, 8, 8, '#67e8f9'); // Crystal Core
-    rect(20, 8, 24, 2, '#38bdf8'); rect(22, 6, 20, 2, '#fbbf24'); // Energy Rings
-  }
+function createHeroTexture(type) {
+  const url = HERO_SHEETS[type];
+  if (!url) return null;
+  const tex = texLoader.load(url);
+  tex.generateMipmaps = false;
+  tex.magFilter = THREE.NearestFilter;
+  tex.minFilter = THREE.NearestFilter;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(0.25, 1 / 3); // 4 columns, 3 rows perfectly uniform (320x320 cells)
+  tex.offset.set(0, 2 / 3); // Row 0 (Idle: top row in UV space)
+  return tex;
+}
 
-  const texture = new THREE.CanvasTexture(cvs);
-  texture.magFilter = THREE.NearestFilter;
-  texture.minFilter = THREE.NearestFilter;
-  pixelTextureCache[type] = texture;
-  return texture;
+function createMonsterTexture(kind) {
+  const url = MONSTER_ASSETS[kind] || MONSTER_ASSETS.grunt;
+  const tex = texLoader.load(url);
+  tex.generateMipmaps = false;
+  tex.magFilter = THREE.NearestFilter;
+  tex.minFilter = THREE.NearestFilter;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(1, 1);
+  tex.offset.set(0, 0);
+  return tex;
+}
+
+function createBossTexture() {
+  const tex = texLoader.load(BOSS_SHEET);
+  tex.generateMipmaps = false;
+  tex.magFilter = THREE.NearestFilter;
+  tex.minFilter = THREE.NearestFilter;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(0.25, 1 / 3); // 4 columns, 3 rows (Idle, Walk, Attack)
+  tex.offset.set(0, 2 / 3); // Row 0 (Idle: top row)
+  return tex;
+}
+
+function createChromaKeySpriteMaterial(texture) {
+  return new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    alphaTest: 0.05
+  });
+}
+
+function createDropShadow(rx = 0.65, rz = 0.35) {
+  const geom = new THREE.CircleGeometry(rx, 24);
+  const mat = new THREE.MeshBasicMaterial({
+    color: 0x030712,
+    transparent: true,
+    opacity: 0.38,
+    depthWrite: false
+  });
+  const shadow = new THREE.Mesh(geom, mat);
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.scale.set(1.0, rz / rx, 1.0);
+  shadow.position.y = 0.025;
+  return shadow;
 }
 
 function createPixelSpriteMaterial(type) {
-  const tex = createPixelSpriteTexture(type);
-  return new THREE.SpriteMaterial({ map: tex, transparent: true, alphaTest: 0.1 });
+  const tex = createMonsterTexture(type);
+  return new THREE.SpriteMaterial({ map: tex, transparent: true, alphaTest: 0.05 });
 }
 
-/* 2.5D Enchanted Forest Ground & Arena Texture */
+/* 🌿 2.5D Enchanted Forest Clearing Ground Texture (Witchbrook & Little Witch style) 🌿 */
 function createPixelForestGroundTexture() {
   const cvs = document.createElement('canvas');
-  cvs.width = 256; cvs.height = 256;
+  cvs.width = 512; cvs.height = 512;
   const ctx = cvs.getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
-  ctx.fillStyle = '#13261c'; ctx.fillRect(0, 0, 256, 256);
-  ctx.fillStyle = '#1a3326';
-  for(let x=0; x<256; x+=16) {
-    for(let y=0; y<256; y+=16) {
-      if ((x+y)%32 === 0) ctx.fillRect(x, y, 16, 16);
+  // 1. Lush Green Forest Grass Base (풍성한 잔디 바탕)
+  ctx.fillStyle = '#1c422b'; ctx.fillRect(0, 0, 512, 512);
+  ctx.fillStyle = '#225235';
+  for(let x = 0; x < 512; x += 16) {
+    for(let y = 0; y < 512; y += 16) {
+      if ((x + y) % 32 === 0) ctx.fillRect(x, y, 16, 16);
     }
   }
 
-  const colors = ['#22c55e', '#16a34a', '#f59e0b', '#ef4444', '#38bdf8'];
-  for(let i=0; i<300; i++) {
-    const rx = Math.floor(Math.random()*256);
-    const ry = Math.floor(Math.random()*256);
-    ctx.fillStyle = colors[Math.floor(Math.random()*colors.length)];
-    ctx.fillRect(rx, ry, 3, 3);
+  // 2. Cobblestone & Dirt Paths (중앙과 4방향 관문으로 이어지는 자갈 흙길)
+  ctx.fillStyle = '#4a3728';
+  // Vertical and horizontal crossroads
+  ctx.fillRect(224, 0, 64, 512);
+  ctx.fillRect(0, 224, 512, 64);
+  // Central clearing circle
+  ctx.beginPath(); ctx.arc(256, 256, 110, 0, Math.PI * 2); ctx.fill();
+
+  // Cobblestone stones inside the path
+  ctx.fillStyle = '#6b533e';
+  for(let x = 16; x < 496; x += 12) {
+    for(let y = 16; y < 496; y += 12) {
+      if ((Math.abs(x - 256) < 32 || Math.abs(y - 256) < 32 || Math.hypot(x - 256, y - 256) < 100) && Math.random() < 0.4) {
+        ctx.fillRect(x, y, 8, 6);
+      }
+    }
   }
 
-  ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.arc(128, 128, 86, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.arc(128, 128, 82, 0, Math.PI*2); ctx.fill();
-  ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(128, 128, 76, 0, Math.PI*2); ctx.stroke();
+  // Central Stone Podium Ring (타워 아래 룬 원환)
+  ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.arc(256, 256, 68, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.arc(256, 256, 62, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(256, 256, 56, 0, Math.PI * 2); ctx.stroke();
+
+  // 3. Glowing Forest Mushrooms & Little Wildflowers (마법 숲 버섯 & 들꽃)
+  const flowers = ['#fde047', '#f472b6', '#38bdf8', '#c084fc', '#ffffff', '#fb923c'];
+  for(let i = 0; i < 600; i++) {
+    const rx = Math.floor(Math.random() * 512);
+    const ry = Math.floor(Math.random() * 512);
+    if (Math.hypot(rx - 256, ry - 256) > 75) {
+      ctx.fillStyle = flowers[Math.floor(Math.random() * flowers.length)];
+      ctx.fillRect(rx, ry, 3, 3);
+    }
+  }
+
+  // 4. Wooden Fences near boundaries (외곽 목조 펜스 장식)
+  ctx.fillStyle = '#78350f';
+  for (let i = 40; i < 480; i += 32) {
+    if (Math.abs(i - 256) > 40) {
+      ctx.fillRect(i, 36, 6, 14);
+      ctx.fillRect(i, 464, 6, 14);
+      ctx.fillRect(36, i, 14, 6);
+      ctx.fillRect(464, i, 14, 6);
+    }
+  }
 
   const tex = new THREE.CanvasTexture(cvs);
   tex.magFilter = THREE.NearestFilter;
@@ -240,199 +279,99 @@ function createPixelForestGroundTexture() {
   return tex;
 }
 
-/* Ground & Arena */
-const forestGroundTex = createPixelForestGroundTexture();
-const groundMat = new THREE.MeshStandardMaterial({ map: forestGroundTex, roughness: 0.9 });
+/* 🌿 2.5D Enchanted Forest Clearing Ground Map (2D 픽셀아트 배경) 🌿 */
+const forestMapTex = texLoader.load('./forest_map.png');
+forestMapTex.magFilter = THREE.LinearFilter;
+forestMapTex.minFilter = THREE.LinearMipmapLinearFilter;
+const groundMat = new THREE.MeshBasicMaterial({ map: forestMapTex });
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(42, 42), groundMat);
 ground.rotation.x = -Math.PI / 2;
-ground.receiveShadow = true;
 scene.add(ground);
 
-/* 🌲 Boundary Forest Trees (Little Witch in the Woods style) 🌲 */
-const treeMat = createPixelSpriteMaterial('tree');
-for (let i = 0; i < 28; i++) {
-  const angle = (i / 28) * Math.PI * 2;
-  const radius = 17.5 + (Math.sin(i * 3) * 1.5);
-  const tx = Math.cos(angle) * radius;
-  const tz = Math.sin(angle) * radius;
-  
-  const treeSprite = new THREE.Sprite(treeMat);
-  const treeScale = 3.6 + (Math.sin(i * 5) * 0.6);
-  treeSprite.scale.set(treeScale, treeScale, 1.0);
-  treeSprite.position.set(tx, treeScale * 0.48, tz);
-  scene.add(treeSprite);
-}
-
-/* ═══ MAGICAL ARCANE CRYSTAL SPIRE TOWER (중앙 마법 수정탑) ═══ */
+/* ═══ 100% 2.5D PIXEL ART SACRED WORLD TREE (중앙 신성한 세계수) ═══ */
 const towerGroup = new THREE.Group();
 
-// 1. Foundation Base & Octagonal Runed Podium
-const towerBase = new THREE.Mesh(
-  new THREE.CylinderGeometry(3.2, 3.8, 0.8, 8),
-  mat(0x1e293b, 0, 0.4, 0.8)
-);
-towerBase.position.y = 0.4;
-towerBase.receiveShadow = true;
-towerBase.castShadow = true;
-towerGroup.add(towerBase);
+const worldTreeTex = texLoader.load('./world_tree.png');
+worldTreeTex.generateMipmaps = false;
+worldTreeTex.magFilter = THREE.NearestFilter;
+worldTreeTex.minFilter = THREE.NearestFilter;
 
-// Base Outer Decorative Gold Rune Ring
-const baseGoldRing = new THREE.Mesh(
-  new THREE.TorusGeometry(3.5, 0.08, 8, 32),
-  mat(0xf59e0b, 0.8, 0.2, 0.9)
-);
-baseGoldRing.rotation.x = Math.PI / 2;
-baseGoldRing.position.y = 0.82;
-towerGroup.add(baseGoldRing);
-
-// 2. Middle Podium & Stairs
-const podium = new THREE.Mesh(
-  new THREE.CylinderGeometry(2.3, 2.8, 1.2, 8),
-  mat(0x334155, 0, 0.5, 0.6)
-);
-podium.position.y = 1.4;
-podium.castShadow = true;
-podium.receiveShadow = true;
-towerGroup.add(podium);
-
-// 3. Spire Tower Shaft (Arcane Spire Body)
-const shaft = new THREE.Mesh(
-  new THREE.CylinderGeometry(1.4, 2.0, 3.8, 12),
-  mat(0x0f172a, 0, 0.3, 0.8)
-);
-shaft.position.y = 3.9;
-shaft.castShadow = true;
-shaft.receiveShadow = true;
-towerGroup.add(shaft);
-
-// Spire Wall Decorative Pillars (4 Corner Gothic Buttresses with Glow Orbs)
-for (let i = 0; i < 4; i++) {
-  const angle = (i * Math.PI) / 2;
-  const px = Math.cos(angle) * 1.85;
-  const pz = Math.sin(angle) * 1.85;
-  const pillar = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.4, 4.2, 8),
-    mat(0x3b82f6, 0.4, 0.2, 0.8)
-  );
-  pillar.position.set(px, 3.8, pz);
-  pillar.castShadow = true;
-  towerGroup.add(pillar);
-
-  const pOrb = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 10, 10),
-    new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
-  );
-  pOrb.position.set(px, 6.0, pz);
-  towerGroup.add(pOrb);
-}
-
-// 4. Upper Spire Crown Platform & Arches
-const crown = new THREE.Mesh(
-  new THREE.CylinderGeometry(1.8, 1.2, 0.6, 8),
-  mat(0xf59e0b, 0.6, 0.3, 0.9)
-);
-crown.position.y = 5.9;
-crown.castShadow = true;
-towerGroup.add(crown);
-
-for (let i = 0; i < 4; i++) {
-  const angle = (i * Math.PI) / 2 + Math.PI / 4;
-  const arch = new THREE.Mesh(
-    new THREE.ConeGeometry(0.2, 1.6, 6),
-    mat(0xd97706, 0.6)
-  );
-  arch.rotation.z = Math.PI;
-  arch.position.set(Math.cos(angle) * 1.2, 6.8, Math.sin(angle) * 1.2);
-  towerGroup.add(arch);
-}
-
-// 5. Giant Floating Arcane Crystal Core (거대 마법 수정체)
-const crystalMat = new THREE.MeshPhongMaterial({
-  color: 0x06b6d4,
-  emissive: 0x0891b2,
-  specular: 0xffffff,
-  shininess: 100,
+const worldTreeMat = new THREE.SpriteMaterial({
+  map: worldTreeTex,
   transparent: true,
-  opacity: 0.92
+  alphaTest: 0.05
 });
-const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(1.1, 0), crystalMat);
-crystal.position.set(0, 7.6, 0);
-crystal.castShadow = true;
-towerGroup.add(crystal);
 
-// Floating Secondary Mini Crystals Orbiting Core
-const miniCrystals = [];
-for (let i = 0; i < 3; i++) {
-  const mc = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.3, 0),
-    new THREE.MeshBasicMaterial({ color: 0x67e8f9 })
-  );
-  mc.position.set(0, 7.6, 0);
-  towerGroup.add(mc);
-  miniCrystals.push(mc);
-}
+const towerSprite = new THREE.Sprite(worldTreeMat);
+const tScale = 7.0; // 웅장한 신화 속 세계수 크기
+towerSprite.scale.set(tScale, tScale, 1.0);
+towerSprite.position.y = tScale * 0.44; // 뿌리가 지면에 자연스럽게 안착
+towerGroup.add(towerSprite);
 
-// Dual Floating Arcane Energy Rings
-const crystalRing1 = new THREE.Mesh(
-  new THREE.TorusGeometry(1.7, 0.05, 12, 48),
-  new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 })
-);
-crystalRing1.rotation.x = Math.PI / 3;
-crystalRing1.position.set(0, 7.6, 0);
-towerGroup.add(crystalRing1);
+// Under-tree Drop Shadow
+const treeShadow = createDropShadow(2.6, 1.3);
+treeShadow.position.y = 0.03;
+towerGroup.add(treeShadow);
 
-const crystalRing2 = new THREE.Mesh(
-  new THREE.TorusGeometry(1.3, 0.04, 12, 48),
-  new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.8 })
-);
-crystalRing2.rotation.x = -Math.PI / 4;
-crystalRing2.position.set(0, 7.6, 0);
-towerGroup.add(crystalRing2);
+// Mystical Emerald & Cyan Core Glow (은은한 숲의 요정 빛)
+const crystalLight = new THREE.PointLight(0x34d399, 1.0, 14);
+crystalLight.position.set(0, 3.8, 0);
+towerGroup.add(crystalLight);
 
-// Point Light from Tower Crystal
-const crystalLight = new THREE.PointLight(0x06b6d4, 2.5, 18);
-crystalLight.position.set(0, 7.6, 0);
-// Scale central tower to ~3x character height (1.8 * 3 = 5.4 units)
-towerGroup.scale.setScalar(0.62);
+// Warm Cottage Window Glow in World Tree (은은한 오두막 등불)
+const windowLight = new THREE.PointLight(0xfde047, 0.6, 8);
+windowLight.position.set(0, 5.0, 0.4);
+towerGroup.add(windowLight);
+
 scene.add(towerGroup);
 
-/* Gate Portals */
-for(const g of GATES) {
-  addBox([g.x,g.y+.45,g.z],[2.8,.9,1.1],0x1e293b);
-  const gateRune=new THREE.Mesh(new THREE.CircleGeometry(1.4,24),new THREE.MeshBasicMaterial({color:0xd97706,transparent:true,opacity:.38}));
-  gateRune.rotation.x=-Math.PI/2;gateRune.position.set(g.x,.04,g.z);scene.add(gateRune);
-}
 
-const twrRing=new THREE.Mesh(new THREE.RingGeometry(TWR_RNG-.12,TWR_RNG,64),new THREE.MeshBasicMaterial({color:0x06b6d4,transparent:true,opacity:.15,side:THREE.DoubleSide}));
-twrRing.rotation.x=-Math.PI/2;twrRing.position.y=.03;scene.add(twrRing);
 
-/* ═══ GLTF 3D MODEL LOADER SYSTEM ═══ */
-const loadedGLTFModels = {};
-const gltfLoader = (typeof THREE.GLTFLoader !== 'undefined') ? new THREE.GLTFLoader() : null;
+/* ✨ Floating Magical Fireflies (숲속 반딧불이 파티클) ✨ */
+const firefliesCount = 36;
+const fireflyGeom = new THREE.BufferGeometry();
+const fireflyPos = new Float32Array(firefliesCount * 3);
+const fireflySpeeds = [];
 
-if (gltfLoader) {
-  const modelsToLoad = [
-    { key: 'wc_knight', url: './wc_knight.glb' },
-    { key: 'wc_barbarian', url: './wc_barbarian.glb' },
-    { key: 'wc_mage', url: './wc_mage.glb' },
-    { key: 'wc_rogue', url: './wc_rogue.glb' },
-    { key: 'wc_skeleton_warrior', url: './wc_skeleton_warrior.glb' },
-    { key: 'wc_skeleton_minion', url: './wc_skeleton_minion.glb' },
-    { key: 'wc_skeleton_mage', url: './wc_skeleton_mage.glb' },
-    { key: 'wc_skeleton_rogue', url: './wc_skeleton_rogue.glb' }
-  ];
-  modelsToLoad.forEach(item => {
-    gltfLoader.load(item.url, gltf => {
-      gltf.scene.traverse(child => {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-      loadedGLTFModels[item.key] = gltf;
-    }, null, err => { console.warn('GLTF load error:', item.key); });
+for (let i = 0; i < firefliesCount; i++) {
+  fireflyPos[i * 3 + 0] = (Math.random() - 0.5) * 28;
+  fireflyPos[i * 3 + 1] = 0.4 + Math.random() * 2.8;
+  fireflyPos[i * 3 + 2] = (Math.random() - 0.5) * 28;
+  fireflySpeeds.push({
+    vx: (Math.random() - 0.5) * 0.4,
+    vy: Math.random() * 0.5 + 0.2,
+    baseY: fireflyPos[i * 3 + 1],
+    phase: Math.random() * Math.PI * 2
   });
 }
+fireflyGeom.setAttribute('position', new THREE.BufferAttribute(fireflyPos, 3));
+const fireflyMat = new THREE.PointsMaterial({
+  color: 0xfef08a,
+  size: 0.2,
+  transparent: true,
+  opacity: 0.65,
+  blending: THREE.AdditiveBlending
+});
+const fireflyPoints = new THREE.Points(fireflyGeom, fireflyMat);
+scene.add(fireflyPoints);
+
+/* Gate Portals (신비로운 소환 결계) */
+for(const g of GATES) {
+  const gateRune = new THREE.Mesh(
+    new THREE.CircleGeometry(1.6, 32),
+    new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.25 })
+  );
+  gateRune.rotation.x = -Math.PI / 2;
+  gateRune.position.set(g.x, 0.04, g.z);
+  scene.add(gateRune);
+
+  const gateLight = new THREE.PointLight(0x38bdf8, 0.4, 5);
+  gateLight.position.set(g.x, 0.8, g.z);
+  scene.add(gateLight);
+}
+
+const twrRing=new THREE.Mesh(new THREE.RingGeometry(TWR_RNG-.12,TWR_RNG,64),new THREE.MeshBasicMaterial({color:0x06b6d4,transparent:true,opacity:.18,side:THREE.DoubleSide}));
+twrRing.rotation.x=-Math.PI/2;twrRing.position.y=.03;scene.add(twrRing);
 
 /* ═══ GAME STATE ═══ */
 let state='menu';
@@ -453,7 +392,7 @@ function initHero(type){
     atkTimer:0,crit:.08,power:1,lifesteal:0,evasion:0,armor:0,rateBonus:0,
     level:1,xp:0,nextXP:100,skillPoints:1,
     skillLevels:{Q:0,W:0,E:0,R:0},skillCDs:{Q:0,W:0,E:0,R:0},
-    buffs:[],dead:false,facing:new THREE.Vector3(0,0,-1),
+    buffs:[],dead:false,facing:new THREE.Vector3(0,0,-1),lastDirX:1,
     obj:null,anim:null,isMoving:false,
     shield:0,poison:0,poisonDmg:0,stealthBonus:0,hasRevive:false};
 }
@@ -474,48 +413,27 @@ function showDamageText(pos, text, color='#ffffff', isCrit=false) {
   setTimeout(() => el.remove(), 800);
 }
 
-function createGltfModelContainer(gltfData, targetHeight = 1.8) {
-  const container = new THREE.Group();
-  const model = (typeof THREE.SkeletonUtils !== 'undefined')
-              ? THREE.SkeletonUtils.clone(gltfData.scene)
-              : gltfData.scene.clone(true);
-  
-  // Calculate bounding box height of unscaled raw GLTF scene
-  const bbox = new THREE.Box3().setFromObject(gltfData.scene);
-  const rawHeight = Math.max(0.1, bbox.max.y - bbox.min.y);
-  
-  // Scale container dynamically so final model height matches targetHeight in world space
-  const scaleFactor = targetHeight / rawHeight;
-  container.scale.setScalar(scaleFactor);
-  container.add(model);
-
-  // Clean animation clips: strip scale tracks that override model scaling
-  const animations = (gltfData.animations || []).map(clip => {
-    const clonedClip = clip.clone();
-    clonedClip.tracks = clonedClip.tracks.filter(t => !t.name.endsWith('.scale') && !t.name.includes('scale'));
-    return clonedClip;
-  });
-
-  return { container, model, animations };
-}
-
-/* ═══ 3D GLTF & PROCEDURAL HERO BUILDER ═══ */
 /* ═══ 2.5D PIXEL ART HERO BUILDER ═══ */
 function makeHero(){
   if(hero.obj)scene.remove(hero.obj);
   const g=new THREE.Group(),d=HEROES[hero.type];
 
-  // 1. Hero Selection Ring (Underfeet aura)
+  // 1. 2.5D Underfeet Drop Shadow
+  const shadow = createDropShadow(0.68, 0.35);
+  g.add(shadow);
+
+  // 2. Hero Selection Ring (Underfeet aura)
   const auraGroup=new THREE.Group();
   const auraInner=new THREE.Mesh(
     new THREE.RingGeometry(0.3,0.76,32),
-    new THREE.MeshBasicMaterial({color:d.color,transparent:true,opacity:0.6,side:THREE.DoubleSide})
+    new THREE.MeshBasicMaterial({color:d.color,transparent:true,opacity:0.65,side:THREE.DoubleSide})
   );
-  auraInner.rotation.x=-Math.PI/2;auraInner.position.y=0.04;
+  auraInner.rotation.x=-Math.PI/2;auraInner.position.y=0.035;
   auraGroup.add(auraInner);g.add(auraGroup);
 
-  // 2. 2.5D Pixel Art Billboard Sprite
-  const spriteMat = createPixelSpriteMaterial(hero.type);
+  // 3. 2.5D Animated Sprite Sheet with Shader Chroma-Key
+  const tex = createHeroTexture(hero.type);
+  const spriteMat = createChromaKeySpriteMaterial(tex);
   const sprite = new THREE.Sprite(spriteMat);
   sprite.scale.set(2.4, 2.4, 1.0);
   sprite.position.y = 1.1;
@@ -524,43 +442,67 @@ function makeHero(){
   g.position.copy(hero.pos);
   scene.add(g);
   hero.obj=g;
-  hero.anim={ auraGroup, sprite, baseH: 2.4, baseW: 2.4, walkTime: 0, attackTimer: 0 };
+  hero.anim={
+    auraGroup, sprite, tex, baseH: 2.4, baseW: 2.4,
+    state: 'idle', frame: 0, frameTimer: 0,
+    walkTime: 0, attackTimer: 0, hitTimer: 0
+  };
 }
 
-/* ═══ 3D GLTF & PROCEDURAL MONSTER BUILDER ═══ */
-/* ═══ 2.5D PIXEL ART MONSTER BUILDER ═══ */
+/* ═══ 2.5D PIXEL ART MONSTER BUILDER (Cute Mobs & Boss Sprite Sheet) ═══ */
 function makeEnemy(e){
   const g=new THREE.Group();
   const isBoss = (e.kind === 'boss');
-  const spriteKeyMap = {
-    grunt: 'grunt',
-    runner: 'runner',
-    tank: 'tank',
-    caster: 'caster',
-    brute: 'brute',
-    boss: 'boss'
-  };
-  const key = spriteKeyMap[e.kind] || 'grunt';
-  const spriteMat = createPixelSpriteMaterial(key);
-  const sprite = new THREE.Sprite(spriteMat);
   
-  const baseH = isBoss ? 4.5 : (e.kind==='brute' ? 3.2 : e.h * 1.6);
+  let baseH = 2.0;
+  if (isBoss) baseH = 4.8;
+  else if (e.kind === 'brute') baseH = 3.3;
+  else if (e.kind === 'tank') baseH = 2.5;
+  else if (e.kind === 'caster') baseH = 2.1;
+  else if (e.kind === 'runner') baseH = 2.0;
+  else if (e.kind === 'grunt') baseH = 1.9;
   const baseW = baseH;
+
+  // 1. 2.5D Underfeet Drop Shadow
+  const shadow = createDropShadow(baseW * 0.28, baseW * 0.14);
+  g.add(shadow);
+
+  // 2. 2.5D Pixel Art Sprite (Single image for mobs, 4x3 sprite sheet for Boss)
+  let tex;
+  if (isBoss) {
+    tex = createBossTexture();
+  } else {
+    tex = createMonsterTexture(e.kind);
+  }
+
+  const spriteMat = new THREE.SpriteMaterial({
+    map: tex,
+    transparent: true,
+    alphaTest: 0.05
+  });
+  const sprite = new THREE.Sprite(spriteMat);
   sprite.scale.set(baseW, baseH, 1.0);
-  sprite.position.y = baseH * 0.48;
+  sprite.position.y = baseH * 0.5;
   g.add(sprite);
 
+  // 3. Boss Demonic Aura
   if (isBoss) {
     const bossAura = new THREE.Mesh(
-      new THREE.RingGeometry(0.6, 1.5, 24),
-      new THREE.MeshBasicMaterial({color: 0xd97706, transparent: true, opacity: 0.7, side: THREE.DoubleSide})
+      new THREE.RingGeometry(0.8, 1.8, 32),
+      new THREE.MeshBasicMaterial({color: 0xd97706, transparent: true, opacity: 0.75, side: THREE.DoubleSide})
     );
     bossAura.rotation.x = -Math.PI/2; bossAura.position.y = 0.04;
     g.add(bossAura);
   }
 
   g.position.copy(e.pos);scene.add(g);e.obj=g;
-  e.anim={ sprite, baseH, baseW, walkTime: Math.random()*10, lungeTimer: 0 };
+  e.anim={
+    sprite, tex, baseH, baseW, isBoss,
+    state: 'walk', frame: 0, frameTimer: 0,
+    walkTime: Math.random()*10,
+    lungeTimer: 0, hitTimer: 0, attackTimer: 0,
+    lastDirX: 1
+  };
 }
 
 /* ═══ WAVE / SPAWN ═══ */
@@ -599,6 +541,12 @@ function hitE(e,dmg,isCrit=false){
   if(e.dead)return;
   e.hp-=dmg;
   showDamageText(e.pos, Math.round(dmg), isCrit ? '#fde047' : '#ffffff', isCrit);
+  if(e.anim){
+    e.anim.hitTimer = 0.12;
+    if(e.anim.sprite && e.anim.sprite.material){
+      e.anim.sprite.material.color.setHex(isCrit ? 0xfef08a : 0xff7777);
+    }
+  }
   if(e.hp<=0)killE(e);
 }
 function killE(e){
@@ -659,6 +607,11 @@ function heroAttack(){
     burst(target.pos,isCrit?0xfde047:0xffffff,isCrit?6:3);
   }
   hero.facing.set(target.pos.x-hero.pos.x,0,target.pos.z-hero.pos.z).normalize();
+  if(!hero.isMoving){
+    // Screen X in isometric camera (16,20,16): (target.x - hero.x) - (target.z - hero.z)
+    const screenDx = (target.pos.x - hero.pos.x) - (target.pos.z - hero.pos.z);
+    if(Math.abs(screenDx) > 0.05) hero.lastDirX = (screenDx < 0) ? -1 : 1;
+  }
   if(hero.obj)hero.obj.rotation.y=Math.atan2(hero.facing.x,hero.facing.z);
 }
 
@@ -666,8 +619,8 @@ function towerAttack(){
   if(tower.atkTimer>0)return;
   const t=nearest(new THREE.Vector3(0,0,0),TWR_RNG);if(!t)return;
   tower.atkTimer=TWR_RATE;
-  const obj=new THREE.Mesh(new THREE.SphereGeometry(.16,8,8),new THREE.MeshBasicMaterial({color:0x06b6d4}));
-  obj.position.set(0,3.2,0);scene.add(obj);
+  const obj=new THREE.Mesh(new THREE.SphereGeometry(.2,8,8),new THREE.MeshBasicMaterial({color:0x34d399}));
+  obj.position.set(0,3.8,0);scene.add(obj);
   projectiles.push({obj,target:t,dmg:TWR_DMG*(1+wave*.02),splash:.6,tower:true});
 }
 
@@ -681,6 +634,7 @@ function useSkill(key){
   if(sk.ulti&&hero.level<6){notify('레벨 6 이상 필요');return}
   const lv=slv-1;
   hero.skillCDs[key]=sk.cd[lv];
+  if(hero.anim) hero.anim.attackTimer = 0.35;
   const t=sk.type;
 
   if(t==='aoe'){
@@ -783,47 +737,96 @@ function move(dt){
 
   if (len > 1) { x /= len; z /= len; }
 
+  // Screen-space horizontal movement determination for isometric quarter-view camera (16,20,16):
+  // Screen right is (+x, -z) -> screenDx = x - z.
+  const screenDx = x - z;
+  if (keys.has('a') || keys.has('arrowleft')) {
+    hero.lastDirX = -1;
+  } else if (keys.has('d') || keys.has('arrowright')) {
+    hero.lastDirX = 1;
+  } else if (Math.abs(screenDx) > 0.05) {
+    hero.lastDirX = (screenDx < 0) ? -1 : 1;
+  }
+
   const v = new THREE.Vector3(x, 0, z).multiplyScalar(hero.speed * dt);
   hero.pos.add(v);hero.pos.x=THREE.MathUtils.clamp(hero.pos.x,-MAP_H+1,MAP_H-1);
   hero.pos.z=THREE.MathUtils.clamp(hero.pos.z,-MAP_H+1,MAP_H-1);
   hero.facing.set(v.x,0,v.z).normalize();
-  if(hero.obj){hero.obj.position.copy(hero.pos);hero.obj.rotation.y=Math.atan2(v.x,v.z)}
+  if(hero.obj){hero.obj.position.copy(hero.pos);}
 }
 
 /* ═══ 2.5D SQUISH & STRETCH ANIMATIONS & HEALTH BARS ═══ */
 function updateAnimations(dt){
-  // 1. Hero 2.5D Pixel Bobbing Animation
-  if(hero.anim&&hero.obj&&!hero.dead){
-    const a=hero.anim;
-    if(a.auraGroup)a.auraGroup.rotation.y+=dt*1.2;
-    
-    if(hero.isMoving){
-      a.walkTime+=dt*14;
-      const bounce=Math.abs(Math.sin(a.walkTime))*0.25;
-      const squish=Math.sin(a.walkTime*2)*0.08;
-      const flip=(hero.facing.x<0)?-1:1;
-      if(a.sprite){
-        a.sprite.scale.set(a.baseW*(1-squish)*flip, a.baseH*(1+squish), 1.0);
-        a.sprite.position.y=1.1+bounce;
-      }
-    } else {
-      a.walkTime+=dt*3;
-      const breathe=Math.sin(a.walkTime)*0.04;
-      const flip=(hero.facing.x<0)?-1:1;
-      if(a.sprite){
-        a.sprite.scale.set(a.baseW*(1-breathe)*flip, a.baseH*(1+breathe), 1.0);
-        a.sprite.position.y=1.1;
+  // 1. Hero 16-Bit Pixel Animated Sprite Machine (Witchbrook & Little Witch)
+  if(hero.anim && hero.obj && !hero.dead){
+    const a = hero.anim;
+    if(a.auraGroup) a.auraGroup.rotation.y += dt * 1.2;
+
+    if(a.hitTimer > 0){
+      a.hitTimer -= dt;
+      if(a.hitTimer <= 0 && a.sprite && a.sprite.material){
+        a.sprite.material.color.setHex(0xffffff);
       }
     }
+
+    // Determine current animation state & FPS
+    let targetState = 'idle';
+    let frameRate = 3.5; // FPS for idle breathing
+
     if (a.attackTimer > 0) {
+      targetState = 'attack';
+      frameRate = 12; // 4 attack frames in ~0.3s
       a.attackTimer -= dt;
-      const progress = a.attackTimer / 0.28;
-      const lungeOffset = Math.sin((1 - progress) * Math.PI) * 0.4;
+      const progress = 1 - (a.attackTimer / 0.28);
+      const lungeOffset = Math.sin(Math.min(1, Math.max(0, progress)) * Math.PI) * 0.35;
       const forward = hero.facing.clone().multiplyScalar(lungeOffset);
       hero.obj.position.copy(hero.pos).add(forward);
+    } else if (hero.isMoving) {
+      targetState = 'walk';
+      frameRate = 9; // 9 FPS for walking & running
+      hero.obj.position.copy(hero.pos);
     } else {
+      targetState = 'idle';
+      frameRate = 3.5;
       hero.obj.position.copy(hero.pos);
     }
+
+    // State change resets frame index
+    if (a.state !== targetState) {
+      a.state = targetState;
+      a.frame = 0;
+      a.frameTimer = 0;
+    }
+
+    // Advance animation frame timer
+    a.frameTimer += dt;
+    if (a.frameTimer >= 1 / frameRate) {
+      a.frameTimer = 0;
+      a.frame = (a.frame + 1) % 4;
+    }
+
+    // UV Offset Frame Swapping & Directional Flip (GPU Hardware Accelerated)
+    if (a.tex) {
+      const col = a.frame; // 0, 1, 2, 3
+      // Row 0 = Idle (Top: 2/3), Row 1 = Walk (Mid: 1/3), Row 2 = Attack (Bot: 0.0)
+      let rowY = 2 / 3;
+      if (a.state === 'walk') rowY = 1 / 3;
+      else if (a.state === 'attack') rowY = 0.0;
+
+      const isLeft = (hero.lastDirX < 0);
+      if (isLeft) {
+        a.tex.repeat.set(-0.25, 1 / 3);
+        a.tex.offset.set((col + 1) * 0.25, rowY);
+      } else {
+        a.tex.repeat.set(0.25, 1 / 3);
+        a.tex.offset.set(col * 0.25, rowY);
+      }
+    }
+
+    // Directional Flip & Subtle Step Bounce
+    const bounce = (a.state === 'walk') ? Math.abs(Math.sin(a.frame * Math.PI * 0.5)) * 0.08 : 0;
+    a.sprite.scale.set(a.baseW, a.baseH, 1.0);
+    a.sprite.position.y = 1.1 + bounce;
   }
 
   // 2. Enemy 2.5D Pixel Bobbing & Horizontal HTML Health Bars
@@ -835,11 +838,85 @@ function updateAnimations(dt){
     }
 
     if(e.anim && e.anim.sprite){
-      e.anim.walkTime+=dt*10;
-      const bounce=Math.abs(Math.sin(e.anim.walkTime))*0.2;
-      const squish=Math.sin(e.anim.walkTime*2)*0.06;
-      e.anim.sprite.scale.set(e.anim.baseW*(1-squish), e.anim.baseH*(1+squish), 1.0);
-      e.anim.sprite.position.y=e.anim.baseH*0.48+bounce;
+      const a = e.anim;
+      if(a.hitTimer > 0){
+        a.hitTimer -= dt;
+        if(a.hitTimer <= 0 && a.sprite.material){
+          a.sprite.material.color.setHex(0xffffff);
+        }
+      }
+
+      const isLeft = (a.lastDirX < 0);
+
+      if (a.isBoss) {
+        // 👑 보스 몬스터 4x3 스프라이트 시트 애니메이션
+        let targetState = 'walk';
+        let frameRate = 5;
+
+        if (a.attackTimer > 0) {
+          targetState = 'attack';
+          frameRate = 7;
+          a.attackTimer -= dt;
+        } else if (e.distToTarget !== undefined && e.distToTarget < 2.6) {
+          targetState = 'attack';
+          frameRate = 6;
+        } else {
+          targetState = 'walk';
+          frameRate = 5;
+        }
+
+        if (a.state !== targetState) {
+          a.state = targetState;
+          a.frame = 0;
+          a.frameTimer = 0;
+        }
+
+        a.frameTimer += dt;
+        if (a.frameTimer >= 1 / frameRate) {
+          a.frameTimer = 0;
+          a.frame = (a.frame + 1) % 4;
+        }
+
+        if (a.tex) {
+          const col = a.frame;
+          // Row 0 = Idle (Top: 2/3), Row 1 = Walk (Mid: 1/3), Row 2 = Attack (Bot: 0.0)
+          let rowY = 2 / 3;
+          if (a.state === 'walk') rowY = 1 / 3;
+          else if (a.state === 'attack') rowY = 0.0;
+
+          if (isLeft) {
+            a.tex.repeat.set(-0.25, 1 / 3);
+            a.tex.offset.set((col + 1) * 0.25, rowY);
+          } else {
+            a.tex.repeat.set(0.25, 1 / 3);
+            a.tex.offset.set(col * 0.25, rowY);
+          }
+        }
+
+        const bossBounce = (a.state === 'walk') ? Math.abs(Math.sin(a.frame * Math.PI * 0.5)) * 0.12 : 0;
+        a.sprite.scale.set(a.baseW, a.baseH, 1.0);
+        a.sprite.position.y = a.baseH * 0.52 + bossBounce;
+
+      } else {
+        // 👾 귀여운 잡몹 낱장 이미지: 젤리 스쿼시 & 통통 바운스
+        a.walkTime += dt * 9;
+        const bounce = Math.abs(Math.sin(a.walkTime)) * 0.16;
+        const squish = Math.sin(a.walkTime * 2) * 0.06;
+
+        if (a.tex) {
+          if (isLeft) {
+            a.tex.repeat.set(-1, 1);
+            a.tex.offset.set(1, 0);
+          } else {
+            a.tex.repeat.set(1, 1);
+            a.tex.offset.set(0, 0);
+          }
+        }
+
+        a.sprite.scale.set(a.baseW * (1 - squish), a.baseH * (1 + squish), 1.0);
+        const floatY = (e.kind === 'caster') ? 0.25 + Math.sin(a.walkTime * 0.6) * 0.1 : 0; // 어둠의 마녀 부유
+        a.sprite.position.y = a.baseH * 0.48 + bounce + floatY;
+      }
     }
 
     if(e.lungeTimer > 0){
@@ -947,6 +1024,7 @@ function update(dt){
     let tx=0,tz=0;
     if(e.tauntTimer>0){tx=hero.pos.x;tz=hero.pos.z;e.tauntTimer-=dt}
     const dir=new THREE.Vector3(tx-e.pos.x,0,tz-e.pos.z),dist=dir.length();
+    e.distToTarget = dist;
 
     if(dist<2.6&&tx===0&&tz===0){
       let dmg=e.dmg*dt;
@@ -954,8 +1032,8 @@ function update(dt){
       if (e.atkCool <= 0) {
         e.atkCool = 0.8;
         e.lungeTimer = 0.22;
-        if (e.anim && e.anim.attackAction) {
-          e.anim.attackAction.reset().setLoop(THREE.LoopOnce, 1).play();
+        if (e.anim && e.anim.isBoss) {
+          e.anim.attackTimer = 0.65; // 👑 보스 대검 휘두르기 공격 모션 트리거
         }
       }
       if(tower.shield>0){const ab=Math.min(tower.shield,dmg);tower.shield-=ab;dmg-=ab}
@@ -963,6 +1041,9 @@ function update(dt){
     }else if(dist>0.3){
       let spd=e.speed;if(e.slowTimer>0){spd*=(1-e.slowAmt);e.slowTimer-=dt}
       dir.normalize();e.pos.addScaledVector(dir,spd*dt);
+      // Screen-space horizontal movement determination for isometric camera (16,20,16): dir.x - dir.z
+      const screenDx = dir.x - dir.z;
+      if(e.anim && Math.abs(screenDx) > 0.04) e.anim.lastDirX = (screenDx < 0) ? -1 : 1;
       if(e.obj)e.obj.rotation.y=Math.atan2(dir.x,dir.z);
     }
 
@@ -975,6 +1056,10 @@ function update(dt){
       if(hero.armor>0)dmg*=Math.max(.3,1-hero.armor*.04);
       if(hero.shield>0){const ab=Math.min(hero.shield,dmg);hero.shield-=ab;dmg-=ab}
       hero.hp-=dmg;
+      if(hero.anim && hero.anim.sprite && hero.anim.sprite.material){
+        hero.anim.hitTimer = 0.12;
+        hero.anim.sprite.material.color.setHex(0xff7777);
+      }
     }
 
     if(e.obj){e.obj.position.copy(e.pos)}
@@ -1199,10 +1284,17 @@ function closeSkillUp(){if(state!=='skillUp')return;state='play';hide('skillUp')
 function buildHeroSelect(){
   const box=$('heroChoices');if(!box)return;box.replaceChildren();
   for(const[key,h]of Object.entries(HEROES)){
+    const sheetUrl = HERO_SHEETS[key] || '';
     const b=document.createElement('button');b.type='button';b.className='heroChoice';
     const skList=Object.entries(h.skills).map(([k,s])=>`<b>${'1234'['QWER'.indexOf(k)]}</b> ${s.name}`).join(' · ');
-    b.innerHTML=`<b style="color:#${h.color.toString(16).padStart(6,'0')}">${h.name}</b><small>${h.desc}</small><small class="sk-list">${skList}</small>`;
-    b.onclick=()=>beginHero(key);box.appendChild(b)}
+    b.innerHTML=`
+      <div class="heroPortrait" style="background-image: url('${sheetUrl}')"></div>
+      <b style="color:#${h.color.toString(16).padStart(6,'0')}">${h.name}</b>
+      <small>${h.desc}</small>
+      <small class="sk-list">${skList}</small>
+    `;
+    b.onclick=()=>beginHero(key);box.appendChild(b);
+  }
 }
 
 /* ═══ GAME FLOW ═══ */
@@ -1361,23 +1453,49 @@ let last=performance.now();
 function animate(now){
   const dt=Math.min(.033,Math.max(0,(now-last)/1000));last=now;
   update(dt);
-  crystal.rotation.y += dt * 1.2;
-  crystal.position.y = 7.6 + Math.sin(now * 0.003) * 0.18;
-  crystalRing1.rotation.z += dt * 0.9;
-  crystalRing2.rotation.z -= dt * 1.3;
-  crystalLight.intensity = 2.2 + Math.sin(now * 0.004) * 0.5;
 
-  miniCrystals.forEach((mc, idx) => {
-    const angle = now * 0.002 + (idx * Math.PI * 2 / 3);
-    const r = 1.8;
-    mc.position.x = Math.cos(angle) * r;
-    mc.position.z = Math.sin(angle) * r;
-    mc.position.y = 7.6 + Math.sin(now * 0.005 + idx) * 0.25;
-    mc.rotation.y += dt * 2.0;
-  });
+  // World Tree Gentle Breathing & Runic Glow
+  if (typeof towerSprite !== 'undefined' && towerSprite) {
+    towerSprite.position.y = (7.0 * 0.44) + Math.sin(now * 0.002) * 0.04;
+  }
+  if (typeof crystalLight !== 'undefined' && crystalLight) {
+    crystalLight.intensity = 2.8 + Math.sin(now * 0.004) * 0.6;
+  }
+
+
+
+  // Floating Fireflies in Enchanted Forest
+  if (typeof fireflyPoints !== 'undefined' && fireflyPoints) {
+    const pos = fireflyGeom.attributes.position.array;
+    for (let i = 0; i < firefliesCount; i++) {
+      const sp = fireflySpeeds[i];
+      pos[i * 3 + 0] += sp.vx * dt;
+      pos[i * 3 + 1] = sp.baseY + Math.sin(now * 0.002 + sp.phase) * 0.4;
+      if (Math.abs(pos[i * 3 + 0]) > 14) sp.vx *= -1;
+    }
+    fireflyGeom.attributes.position.needsUpdate = true;
+  }
+
   renderer.render(scene,camera);
   requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
+
+window.testSpawnBoss = function() {
+  const g = GATES[0]; // 북쪽 게이트
+  const e = {
+    kind: 'boss',
+    pos: new THREE.Vector3(g.x, 0, g.z),
+    hp: 4000, maxHp: 4000, speed: 1.6, dmg: 40,
+    gold: 500, xp: 500, h: 3.8, color: 0xdc2626,
+    dead: false, stunTimer: 0, slowTimer: 0, slowAmt: 0,
+    poisonTimer: 0, poisonDmg: 0, tauntTimer: 0,
+    obj: null, anim: null, hpBarEl: null, bob: 0
+  };
+  makeEnemy(e);
+  enemies.push(e);
+  console.log('👑 Test Boss Demon spawned:', e);
+  return e;
+};
 
 })();

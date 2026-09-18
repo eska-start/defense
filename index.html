@@ -5,11 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="description" content="X Hero Defense - 워크래프트 유즈맵 X Hero 스타일 3D 디펜스 게임. 5영웅 × 4스킬, 아이템 조합, 30웨이브.">
 <title>X Hero Defense · 중앙 수호탑</title>
-<link rel="stylesheet" href="./style.css?v=xhero2">
+<link rel="stylesheet" href="./style.css?v=witchbrook_final_v5">
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
+if (window.location.protocol === 'file:') {
+  fetch('http://localhost:8080/index.html', { method: 'HEAD', mode: 'no-cors' })
+    .then(() => { window.location.href = 'http://localhost:8080/index.html'; })
+    .catch(() => {});
+}
 window.addEventListener('error',e=>{const n=document.getElementById('notice');if(!n)return;const msg=e.message||'오류';if(e.error instanceof SyntaxError||/Unexpected token|SyntaxError/i.test(msg))return;n.textContent='오류: '+msg;n.classList.add('show')});
 </script>
 </head>
@@ -28,7 +33,7 @@ window.addEventListener('error',e=>{const n=document.getElementById('notice');if
     <span>GOLD <i id="gold">500 G</i> · 인벤 <i id="inventoryText">0 / 8</i></span>
   </section>
   <section class="hudBox right">
-    <span>수호탑 HP <i id="towerText">5000 / 5000</i></span>
+    <span>세계수 HP <i id="towerText">5000 / 5000</i></span>
     <div class="bar"><div id="towerBar"></div></div>
     <span>영웅 HP <i id="heroHpText">800 / 800</i></span>
     <div class="bar hero"><div id="heroBar"></div></div>
@@ -67,12 +72,16 @@ window.addEventListener('error',e=>{const n=document.getElementById('notice');if
 
 <!-- ─── START ─── -->
 <div id="start" class="overlay">
-  <section class="card">
-    <div class="eyebrow">X HERO DEFENSE</div>
-    <h1>⚔️ 중앙 수호탑</h1>
-    <p>사방에서 몰려오는 적을 처치하고 수호탑을 지키세요!<br>
-    5영웅 · 4스킬 · 아이템 조합 · 30웨이브</p>
-    <button id="startBtn" type="button">게임 시작</button>
+  <section class="card startCard">
+    <div class="conceptBanner">
+      <img src="./concept_art.jpg" alt="Witchbrook & Little Witch in the Woods Concept Art" class="conceptImg">
+      <div class="bannerOverlay"></div>
+    </div>
+    <div class="eyebrow">WITCHBROOK & LITTLE WITCH STYLE</div>
+    <h1>✨ 숲속의 신비한 마법 수호탑</h1>
+    <p>아기자기한 마녀와 영웅들과 함께 숲속의 마법 수정탑을 지키세요!<br>
+    5영웅 · 4스킬 · 신비한 마법 조합 · 30웨이브</p>
+    <button id="startBtn" type="button">✨ 모험 시작하기</button>
     <div class="hint">WASD / 모바일 터치 조이스틱 이동 · 1234 터치 스킬 · I 상점 · K 스킬포인트 · ESC 일시정지</div>
   </section>
 </div>
@@ -145,6 +154,6 @@ window.addEventListener('error',e=>{const n=document.getElementById('notice');if
 </div>
 
 </main>
-<script src="./xhero.js?v=wc3models"></script>
+<script src="./xhero.js?v=monster_pixel_v3"></script>
 </body>
 </html>
