@@ -120,15 +120,148 @@ function mat(c,e=0,rough=.4,metal=.4){
 function addBox(p,s,c){const m=new THREE.Mesh(new THREE.BoxGeometry(...s),mat(c));m.position.set(...p);m.castShadow=m.receiveShadow=true;scene.add(m);return m}
 function addCyl(p,r,h,c){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,12),mat(c));m.position.set(...p);m.castShadow=m.receiveShadow=true;scene.add(m);return m}
 
+/* ═══ 2.5D HD PIXEL ART SPRITE ENGINE ═══ */
+const pixelTextureCache = {};
+
+function createPixelSpriteTexture(type) {
+  if (pixelTextureCache[type]) return pixelTextureCache[type];
+
+  const cvs = document.createElement('canvas');
+  cvs.width = 64; cvs.height = 64;
+  const ctx = cvs.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  const rect = (x, y, w, h, col) => {
+    ctx.fillStyle = col;
+    ctx.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h));
+  };
+
+  if (type === 'warrior') {
+    rect(20, 28, 24, 26, '#991b1b'); rect(18, 34, 28, 22, '#7f1d1d'); // Cape
+    rect(24, 26, 16, 20, '#475569'); rect(26, 28, 12, 16, '#94a3b8'); // Torso Armor
+    rect(26, 44, 5, 12, '#334155'); rect(33, 44, 5, 12, '#334155'); // Legs
+    rect(22, 10, 20, 18, '#fbbf24'); rect(24, 8, 16, 4, '#f59e0b'); // Golden Helm
+    rect(26, 18, 12, 4, '#1e293b'); rect(28, 19, 8, 2, '#ef4444'); // Visor Slit & Eyes
+    rect(44, 8, 4, 38, '#e2e8f0'); rect(42, 24, 8, 4, '#fbbf24'); // Greatsword
+    rect(12, 24, 10, 18, '#2563eb'); rect(14, 22, 6, 22, '#fbbf24'); // Shield
+  } else if (type === 'mage') {
+    rect(22, 26, 20, 26, '#1e40af'); rect(20, 34, 24, 20, '#1d4ed8'); rect(26, 28, 12, 24, '#3b82f6'); // Arcane Robe
+    rect(16, 20, 32, 6, '#312e81'); rect(20, 12, 24, 8, '#4338ca'); rect(24, 4, 16, 8, '#4338ca'); rect(28, -2, 8, 6, '#6366f1'); // Pointy Hat
+    rect(26, 18, 12, 3, '#fbbf24'); rect(26, 23, 4, 3, '#38bdf8'); rect(34, 23, 4, 3, '#38bdf8'); // Eyes
+    rect(46, 6, 4, 44, '#78350f'); rect(44, 2, 8, 8, '#06b6d4'); rect(45, 3, 6, 6, '#67e8f9'); // Orb Staff
+  } else if (type === 'ranger') {
+    rect(22, 24, 20, 24, '#15803d'); rect(20, 10, 24, 16, '#16a34a'); // Leaf Hood
+    rect(24, 18, 16, 6, '#fde047'); rect(26, 20, 3, 3, '#1e293b'); rect(35, 20, 3, 3, '#1e293b'); // Face
+    rect(24, 46, 6, 12, '#78350f'); rect(34, 46, 6, 12, '#78350f'); // Boots
+    rect(44, 10, 4, 34, '#854d0e'); rect(42, 6, 4, 6, '#ca8a04'); rect(42, 42, 4, 6, '#ca8a04'); rect(40, 12, 2, 30, '#f8fafc'); // Bow
+  } else if (type === 'assassin') {
+    rect(20, 24, 24, 26, '#3b0764'); rect(24, 10, 16, 16, '#581c87'); rect(24, 22, 16, 6, '#7e22ce'); // Hood & Scarf
+    rect(26, 16, 4, 3, '#a855f7'); rect(34, 16, 4, 3, '#a855f7'); // Purple Eyes
+    rect(12, 20, 4, 20, '#c084fc'); rect(13, 18, 2, 22, '#e9d5ff'); // Dagger L
+    rect(48, 20, 4, 20, '#c084fc'); rect(49, 18, 2, 22, '#e9d5ff'); // Dagger R
+  } else if (type === 'paladin') {
+    rect(24, 2, 16, 4, '#f59e0b'); rect(28, 0, 8, 8, '#fef08a'); // Sun Halo
+    rect(22, 12, 20, 16, '#ca8a04'); rect(26, 18, 12, 4, '#fef08a'); // Gold Helmet
+    rect(22, 26, 20, 22, '#eab308'); rect(20, 32, 24, 18, '#ffffff'); // White Cloak & Armor
+    rect(46, 10, 10, 14, '#fbbf24'); rect(49, 22, 4, 28, '#78350f'); // Holy Warhammer
+  } else if (type === 'grunt') {
+    rect(24, 10, 16, 14, '#e2e8f0'); rect(26, 16, 4, 4, '#0f172a'); rect(34, 16, 4, 4, '#0f172a'); // Skull
+    rect(26, 24, 12, 18, '#cbd5e1'); rect(26, 42, 4, 12, '#94a3b8'); rect(34, 42, 4, 12, '#94a3b8'); // Skeleton Body
+    rect(44, 16, 4, 26, '#64748b'); // Bone Sword
+  } else if (type === 'runner') {
+    rect(22, 12, 20, 14, '#f1f5f9'); rect(24, 16, 4, 4, '#ef4444'); rect(34, 16, 4, 4, '#ef4444'); // Red Eyes Skull
+    rect(20, 24, 24, 18, '#334155'); rect(12, 22, 4, 16, '#94a3b8'); rect(48, 22, 4, 16, '#94a3b8'); // Speed Daggers
+  } else if (type === 'tank') {
+    rect(20, 8, 24, 18, '#334155'); rect(24, 16, 16, 4, '#0284c7'); // Iron Helm
+    rect(20, 24, 24, 24, '#475569'); rect(8, 18, 14, 28, '#1e293b'); rect(10, 20, 10, 24, '#0284c7'); // Iron Tower Shield
+  } else if (type === 'caster') {
+    rect(22, 10, 20, 14, '#f8fafc'); rect(26, 14, 4, 4, '#a855f7'); rect(34, 14, 4, 4, '#a855f7'); // Necromancer
+    rect(20, 22, 24, 26, '#581c87'); rect(46, 6, 4, 42, '#334155'); rect(44, 2, 8, 8, '#c084fc'); // Purple Robe & Staff
+  } else if (type === 'brute') {
+    rect(16, 10, 32, 38, '#475569'); rect(20, 14, 24, 12, '#334155'); // Moss Stone Golem Body
+    rect(22, 18, 6, 4, '#fde047'); rect(36, 18, 6, 4, '#fde047'); rect(18, 24, 12, 10, '#15803d'); rect(34, 30, 14, 8, '#16a34a'); // Moss & Eye Cracks
+  } else if (type === 'boss') {
+    rect(16, 10, 32, 40, '#991b1b'); rect(14, 2, 8, 14, '#f59e0b'); rect(42, 2, 8, 14, '#f59e0b'); // Demonic Red Pit Lord
+    rect(22, 16, 6, 5, '#facc15'); rect(36, 16, 6, 5, '#facc15'); rect(18, 24, 28, 20, '#450a0a'); // Eyes & Armor
+    rect(46, 6, 14, 20, '#334155'); rect(48, 8, 10, 16, '#dc2626'); // Giant Battleaxe
+  } else if (type === 'tree') {
+    rect(28, 38, 8, 24, '#78350f'); // Tree Trunk
+    rect(16, 24, 32, 18, '#15803d'); rect(20, 14, 24, 16, '#16a34a'); rect(24, 4, 16, 14, '#22c55e'); rect(28, 8, 4, 4, '#86efac'); // Pine Canopy
+  } else if (type === 'tower') {
+    rect(18, 38, 28, 14, '#1e293b'); rect(20, 42, 24, 6, '#334155'); rect(22, 40, 20, 2, '#fbbf24'); // Base & Runes
+    rect(24, 20, 16, 20, '#0f172a'); rect(26, 24, 4, 6, '#38bdf8'); rect(34, 24, 4, 6, '#38bdf8'); // Shaft & Windows
+    rect(22, 16, 20, 6, '#f59e0b'); rect(24, 12, 4, 6, '#d97706'); rect(36, 12, 4, 6, '#d97706'); // Crown & Arches
+    rect(26, 2, 12, 12, '#06b6d4'); rect(28, 4, 8, 8, '#67e8f9'); // Crystal Core
+    rect(20, 8, 24, 2, '#38bdf8'); rect(22, 6, 20, 2, '#fbbf24'); // Energy Rings
+  }
+
+  const texture = new THREE.CanvasTexture(cvs);
+  texture.magFilter = THREE.NearestFilter;
+  texture.minFilter = THREE.NearestFilter;
+  pixelTextureCache[type] = texture;
+  return texture;
+}
+
+function createPixelSpriteMaterial(type) {
+  const tex = createPixelSpriteTexture(type);
+  return new THREE.SpriteMaterial({ map: tex, transparent: true, alphaTest: 0.1 });
+}
+
+/* 2.5D Enchanted Forest Ground & Arena Texture */
+function createPixelForestGroundTexture() {
+  const cvs = document.createElement('canvas');
+  cvs.width = 256; cvs.height = 256;
+  const ctx = cvs.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  ctx.fillStyle = '#13261c'; ctx.fillRect(0, 0, 256, 256);
+  ctx.fillStyle = '#1a3326';
+  for(let x=0; x<256; x+=16) {
+    for(let y=0; y<256; y+=16) {
+      if ((x+y)%32 === 0) ctx.fillRect(x, y, 16, 16);
+    }
+  }
+
+  const colors = ['#22c55e', '#16a34a', '#f59e0b', '#ef4444', '#38bdf8'];
+  for(let i=0; i<300; i++) {
+    const rx = Math.floor(Math.random()*256);
+    const ry = Math.floor(Math.random()*256);
+    ctx.fillStyle = colors[Math.floor(Math.random()*colors.length)];
+    ctx.fillRect(rx, ry, 3, 3);
+  }
+
+  ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.arc(128, 128, 86, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.arc(128, 128, 82, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(128, 128, 76, 0, Math.PI*2); ctx.stroke();
+
+  const tex = new THREE.CanvasTexture(cvs);
+  tex.magFilter = THREE.NearestFilter;
+  tex.minFilter = THREE.NearestFilter;
+  return tex;
+}
+
 /* Ground & Arena */
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.MeshStandardMaterial({color:0x0d1813,roughness:.95}));
-ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+const forestGroundTex = createPixelForestGroundTexture();
+const groundMat = new THREE.MeshStandardMaterial({ map: forestGroundTex, roughness: 0.9 });
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(42, 42), groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
 
-const arena=new THREE.Mesh(new THREE.CircleGeometry(9.5,48),new THREE.MeshStandardMaterial({color:0x1b2820,roughness:.8}));
-arena.rotation.x=-Math.PI/2;arena.position.y=.02;arena.receiveShadow=true;scene.add(arena);
-
-const innerRings=new THREE.Mesh(new THREE.RingGeometry(9.3,9.5,48),new THREE.MeshBasicMaterial({color:0x0284c7,transparent:true,opacity:.4,side:THREE.DoubleSide}));
-innerRings.rotation.x=-Math.PI/2;innerRings.position.y=.03;scene.add(innerRings);
+/* 🌲 Boundary Forest Trees (Little Witch in the Woods style) 🌲 */
+const treeMat = createPixelSpriteMaterial('tree');
+for (let i = 0; i < 28; i++) {
+  const angle = (i / 28) * Math.PI * 2;
+  const radius = 17.5 + (Math.sin(i * 3) * 1.5);
+  const tx = Math.cos(angle) * radius;
+  const tz = Math.sin(angle) * radius;
+  
+  const treeSprite = new THREE.Sprite(treeMat);
+  const treeScale = 3.6 + (Math.sin(i * 5) * 0.6);
+  treeSprite.scale.set(treeScale, treeScale, 1.0);
+  treeSprite.position.set(tx, treeScale * 0.48, tz);
+  scene.add(treeSprite);
+}
 
 /* ═══ MAGICAL ARCANE CRYSTAL SPIRE TOWER (중앙 마법 수정탑) ═══ */
 const towerGroup = new THREE.Group();
@@ -367,177 +500,67 @@ function createGltfModelContainer(gltfData, targetHeight = 1.8) {
 }
 
 /* ═══ 3D GLTF & PROCEDURAL HERO BUILDER ═══ */
+/* ═══ 2.5D PIXEL ART HERO BUILDER ═══ */
 function makeHero(){
   if(hero.obj)scene.remove(hero.obj);
   const g=new THREE.Group(),d=HEROES[hero.type];
 
-  // 1. Hero Selection Ring (Warcraft 3 style under feet aura)
+  // 1. Hero Selection Ring (Underfeet aura)
   const auraGroup=new THREE.Group();
   const auraInner=new THREE.Mesh(
     new THREE.RingGeometry(0.3,0.76,32),
     new THREE.MeshBasicMaterial({color:d.color,transparent:true,opacity:0.6,side:THREE.DoubleSide})
   );
   auraInner.rotation.x=-Math.PI/2;auraInner.position.y=0.04;
-  
-  const auraOuter=new THREE.Mesh(
-    new THREE.TorusGeometry(0.8,0.045,8,32),
-    new THREE.MeshBasicMaterial({color:d.color})
-  );
-  auraOuter.rotation.x=-Math.PI/2;auraOuter.position.y=0.04;
-  auraGroup.add(auraInner,auraOuter);g.add(auraGroup);
+  auraGroup.add(auraInner);g.add(auraGroup);
 
-  let mixer = null, activeAction = null, walkAction = null, attackAction = null;
-
-  // Warcraft 3 Fantasy Hero Model Mapping
-  const gltfKeyMap = {
-    warrior: 'wc_knight',
-    paladin: 'wc_knight',
-    barbarian: 'wc_barbarian',
-    mage: 'wc_mage',
-    ranger: 'wc_rogue',
-    assassin: 'wc_rogue'
-  };
-  const gltfKey = gltfKeyMap[hero.type] || 'wc_knight';
-  const gltfData = loadedGLTFModels[gltfKey];
-
-  if (gltfData) {
-    const { container: modelContainer, model, animations } = createGltfModelContainer(gltfData, 1.8);
-    model.traverse(child => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
-    g.add(modelContainer);
-
-    if (animations && animations.length > 0) {
-      mixer = new THREE.AnimationMixer(model);
-      const idleClip = animations.find(a => /idle/i.test(a.name)) || animations[0];
-      const walkClip = animations.find(a => /walking|running|walk|run/i.test(a.name)) || animations[1] || idleClip;
-      const attackClip = animations.find(a => /attack|slash|swing|punch|hit|shoot|cast|kick/i.test(a.name)) || animations.find(a => a !== idleClip && a !== walkClip) || animations[2] || animations[0];
-      
-      activeAction = mixer.clipAction(idleClip);
-      if (idleClip !== walkClip) walkAction = mixer.clipAction(walkClip);
-      if (attackClip) attackAction = mixer.clipAction(attackClip);
-      activeAction.play();
-    }
-
-  } else {
-    // High-Detail Fallback Procedural Model
-    const bodyNode=new THREE.Group();g.add(bodyNode);
-    const torsoMat=mat(d.color, 0, 0.35, 0.4);
-    const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.36,0.28,0.7,12),torsoMat);
-    torso.position.y=0.92;torso.castShadow=true;bodyNode.add(torso);
-
-    const chestPlate=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.4,0.36),mat(0xf59e0b, 0.2, 0.2, 0.8));
-    chestPlate.position.set(0,1.0,0.02);bodyNode.add(chestPlate);
-
-    const headGroup=new THREE.Group();headGroup.position.y=1.48;
-    const head=new THREE.Mesh(new THREE.SphereGeometry(0.24,14,14),mat(0xffdfc4,0,.7,0));
-    head.castShadow=true;headGroup.add(head);
-
-    const legL=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.11,0.6,10),mat(0x0f172a,0,.5,.5));
-    legL.position.set(-0.17,0.3,0);legL.castShadow=true;
-    const legR=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.11,0.6,10),mat(0x0f172a,0,.5,.5));
-    legR.position.set(0.17,0.3,0);legR.castShadow=true;
-    bodyNode.add(legL,legR);
-
-    const armL=new THREE.Group();armL.position.set(-0.38,1.2,0);
-    const armLMesh=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.09,0.54,10),torsoMat);
-    armLMesh.position.y=-0.22;armLMesh.castShadow=true;armL.add(armLMesh);
-
-    const armR=new THREE.Group();armR.position.set(0.38,1.2,0);
-    const armRMesh=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.09,0.54,10),torsoMat);
-    armRMesh.position.y=-0.22;armRMesh.castShadow=true;armR.add(armRMesh);
-
-    bodyNode.add(armL,armR);
-  }
+  // 2. 2.5D Pixel Art Billboard Sprite
+  const spriteMat = createPixelSpriteMaterial(hero.type);
+  const sprite = new THREE.Sprite(spriteMat);
+  sprite.scale.set(2.4, 2.4, 1.0);
+  sprite.position.y = 1.1;
+  g.add(sprite);
 
   g.position.copy(hero.pos);
   scene.add(g);
   hero.obj=g;
-  hero.anim={ auraGroup, mixer, activeAction, walkAction, attackAction, isWalking:false, attackTimer:0 };
+  hero.anim={ auraGroup, sprite, baseH: 2.4, baseW: 2.4, walkTime: 0, attackTimer: 0 };
 }
 
 /* ═══ 3D GLTF & PROCEDURAL MONSTER BUILDER ═══ */
+/* ═══ 2.5D PIXEL ART MONSTER BUILDER ═══ */
 function makeEnemy(e){
   const g=new THREE.Group();
-  const scale=e.h/1.3;
-  let mixer = null, activeAction = null, walkAction = null, attackAction = null;
-
-  // Warcraft 3 Undead Scourge Monster Model Mapping
   const isBoss = (e.kind === 'boss');
-  const isBrute = (e.kind === 'brute');
-  const gltfKeyMap = {
-    boss: 'wc_barbarian',
-    brute: 'wc_skeleton_warrior',
-    tank: 'wc_skeleton_warrior',
-    runner: 'wc_skeleton_rogue',
-    caster: 'wc_skeleton_mage',
-    grunt: 'wc_skeleton_minion'
+  const spriteKeyMap = {
+    grunt: 'grunt',
+    runner: 'runner',
+    tank: 'tank',
+    caster: 'caster',
+    brute: 'brute',
+    boss: 'boss'
   };
-  const gltfKey = gltfKeyMap[e.kind] || 'wc_skeleton_minion';
-  const gltfData = loadedGLTFModels[gltfKey];
+  const key = spriteKeyMap[e.kind] || 'grunt';
+  const spriteMat = createPixelSpriteMaterial(key);
+  const sprite = new THREE.Sprite(spriteMat);
+  
+  const baseH = isBoss ? 4.5 : (e.kind==='brute' ? 3.2 : e.h * 1.6);
+  const baseW = baseH;
+  sprite.scale.set(baseW, baseH, 1.0);
+  sprite.position.y = baseH * 0.48;
+  g.add(sprite);
 
-  if (gltfData) {
-    const targetH = isBoss ? 3.2 : isBrute ? 2.2 : e.h;
-    const { container: modelContainer, model, animations } = createGltfModelContainer(gltfData, targetH);
-
-    model.traverse(child => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-        if (isBoss) {
-          child.material = child.material.clone();
-          child.material.color.setHex(0xef4444); // Red Demonic Orc Boss
-        }
-      }
-    });
-
-    g.add(modelContainer);
-
-    if (animations && animations.length > 0) {
-      mixer = new THREE.AnimationMixer(model);
-      const walkClip = animations.find(a => /walking|running|walk|run/i.test(a.name)) || animations[0];
-      const attackClip = animations.find(a => /attack|slash|swing|punch|hit|bite/i.test(a.name)) || animations.find(a => a !== walkClip) || animations[0];
-      activeAction = mixer.clipAction(walkClip);
-      if (attackClip) attackAction = mixer.clipAction(attackClip);
-      activeAction.play();
-    }
-
-    if (isBoss) {
-      // Demonic Horns & Flaming Boss Aura
-      const horn1 = new THREE.Mesh(new THREE.ConeGeometry(0.12*scale, 0.65*scale, 6), mat(0xf59e0b, 0.4));
-      horn1.rotation.z = -Math.PI/3; horn1.position.set(-0.25*scale, 2.2*scale, 0);
-      const horn2 = horn1.clone(); horn2.rotation.z = Math.PI/3; horn2.position.x = 0.25*scale;
-      g.add(horn1, horn2);
-
-      const bossAura = new THREE.Mesh(
-        new THREE.RingGeometry(0.48*scale, 1.2*scale, 24),
-        new THREE.MeshBasicMaterial({color: 0xd97706, transparent: true, opacity: 0.7, side: THREE.DoubleSide})
-      );
-      bossAura.rotation.x = -Math.PI/2; bossAura.position.y = 0.04;
-      g.add(bossAura);
-    }
-
-  } else {
-    // High-Detail Fallback Procedural Skeleton / Monster
-    const bodyNode=new THREE.Group();g.add(bodyNode);
-    const boneMat=mat(e.color, 0, 0.6, 0.2);
-    const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.22*scale,0.18*scale,0.54*scale,10),boneMat);
-    torso.position.y=0.6*scale;torso.castShadow=true;bodyNode.add(torso);
-
-    const skull=new THREE.Mesh(new THREE.SphereGeometry(0.2*scale,10,10),boneMat);
-    skull.position.y=1.04*scale;skull.castShadow=true;bodyNode.add(skull);
-
-    for(const x of[-0.06*scale,0.06*scale]){
-      const eye=new THREE.Mesh(new THREE.SphereGeometry(0.04*scale,6,6),new THREE.MeshBasicMaterial({color:0xef4444}));
-      eye.position.set(x,1.06*scale,0.17*scale);bodyNode.add(eye);
-    }
+  if (isBoss) {
+    const bossAura = new THREE.Mesh(
+      new THREE.RingGeometry(0.6, 1.5, 24),
+      new THREE.MeshBasicMaterial({color: 0xd97706, transparent: true, opacity: 0.7, side: THREE.DoubleSide})
+    );
+    bossAura.rotation.x = -Math.PI/2; bossAura.position.y = 0.04;
+    g.add(bossAura);
   }
 
   g.position.copy(e.pos);scene.add(g);e.obj=g;
-  e.anim={ mixer, activeAction, attackAction, walkTime:Math.random()*10 };
+  e.anim={ sprite, baseH, baseW, walkTime: Math.random()*10, lungeTimer: 0 };
 }
 
 /* ═══ WAVE / SPAWN ═══ */
@@ -767,25 +790,30 @@ function move(dt){
   if(hero.obj){hero.obj.position.copy(hero.pos);hero.obj.rotation.y=Math.atan2(v.x,v.z)}
 }
 
-/* ═══ ANIMATION & HORIZONTAL HEALTH BARS UPDATE ═══ */
+/* ═══ 2.5D SQUISH & STRETCH ANIMATIONS & HEALTH BARS ═══ */
 function updateAnimations(dt){
-  // 1. Hero Animations & Attack Lunge Motion
+  // 1. Hero 2.5D Pixel Bobbing Animation
   if(hero.anim&&hero.obj&&!hero.dead){
     const a=hero.anim;
     if(a.auraGroup)a.auraGroup.rotation.y+=dt*1.2;
-    if(a.mixer){
-      if(a.walkAction && a.activeAction !== a.walkAction){
-        if(hero.isMoving && !a.isWalking){
-          a.walkAction.reset().fadeIn(0.15).play();
-          a.activeAction.fadeOut(0.15);
-          a.isWalking = true;
-        } else if(!hero.isMoving && a.isWalking){
-          a.activeAction.reset().fadeIn(0.15).play();
-          a.walkAction.fadeOut(0.15);
-          a.isWalking = false;
-        }
+    
+    if(hero.isMoving){
+      a.walkTime+=dt*14;
+      const bounce=Math.abs(Math.sin(a.walkTime))*0.25;
+      const squish=Math.sin(a.walkTime*2)*0.08;
+      const flip=(hero.facing.x<0)?-1:1;
+      if(a.sprite){
+        a.sprite.scale.set(a.baseW*(1-squish)*flip, a.baseH*(1+squish), 1.0);
+        a.sprite.position.y=1.1+bounce;
       }
-      a.mixer.update(dt);
+    } else {
+      a.walkTime+=dt*3;
+      const breathe=Math.sin(a.walkTime)*0.04;
+      const flip=(hero.facing.x<0)?-1:1;
+      if(a.sprite){
+        a.sprite.scale.set(a.baseW*(1-breathe)*flip, a.baseH*(1+breathe), 1.0);
+        a.sprite.position.y=1.1;
+      }
     }
     if (a.attackTimer > 0) {
       a.attackTimer -= dt;
@@ -793,14 +821,12 @@ function updateAnimations(dt){
       const lungeOffset = Math.sin((1 - progress) * Math.PI) * 0.4;
       const forward = hero.facing.clone().multiplyScalar(lungeOffset);
       hero.obj.position.copy(hero.pos).add(forward);
-      hero.obj.rotation.x = Math.sin((1 - progress) * Math.PI) * 0.3;
     } else {
       hero.obj.position.copy(hero.pos);
-      hero.obj.rotation.x = 0;
     }
   }
 
-  // 2. Enemy Animations & Attack Lunge & 100% Horizontal HTML Health Bars
+  // 2. Enemy 2.5D Pixel Bobbing & Horizontal HTML Health Bars
   const container=$('hpBars');
   for(const e of enemies){
     if(e.dead||state!=='play'){
@@ -808,7 +834,13 @@ function updateAnimations(dt){
       continue;
     }
 
-    if(e.anim&&e.anim.mixer)e.anim.mixer.update(dt);
+    if(e.anim && e.anim.sprite){
+      e.anim.walkTime+=dt*10;
+      const bounce=Math.abs(Math.sin(e.anim.walkTime))*0.2;
+      const squish=Math.sin(e.anim.walkTime*2)*0.06;
+      e.anim.sprite.scale.set(e.anim.baseW*(1-squish), e.anim.baseH*(1+squish), 1.0);
+      e.anim.sprite.position.y=e.anim.baseH*0.48+bounce;
+    }
 
     if(e.lungeTimer > 0){
       e.lungeTimer -= dt;
@@ -817,11 +849,9 @@ function updateAnimations(dt){
       if(e.obj){
         const forward = new THREE.Vector3(0,0,0).sub(e.pos).normalize().multiplyScalar(lungeOffset);
         e.obj.position.copy(e.pos).add(forward);
-        e.obj.rotation.x = Math.sin((1 - progress) * Math.PI) * 0.25;
       }
     } else if(e.obj && !e.dead){
       e.obj.position.copy(e.pos);
-      e.obj.rotation.x = 0;
     }
 
     // Horizontal HTML Health Bar
