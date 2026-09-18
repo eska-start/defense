@@ -130,27 +130,138 @@ arena.rotation.x=-Math.PI/2;arena.position.y=.02;arena.receiveShadow=true;scene.
 const innerRings=new THREE.Mesh(new THREE.RingGeometry(9.3,9.5,48),new THREE.MeshBasicMaterial({color:0x0284c7,transparent:true,opacity:.4,side:THREE.DoubleSide}));
 innerRings.rotation.x=-Math.PI/2;innerRings.position.y=.03;scene.add(innerRings);
 
-/* Castle Altar Structure */
-addBox([0,0.6,0],[6.2,1.2,5.6],0x1e293b);
-addBox([0,1.8,0],[5.0,1.2,4.4],0x334155);
+/* ═══ MAGICAL ARCANE CRYSTAL SPIRE TOWER (중앙 마법 수정탑) ═══ */
+const towerGroup = new THREE.Group();
 
-for(const p of[[-2.7,2.2,-2.3],[2.7,2.2,-2.3],[-2.7,2.2,2.3],[2.7,2.2,2.3]]) {
-  addCyl(p,.6,3.6,0x475569);
-  const brazier=new THREE.Mesh(new THREE.CylinderGeometry(.35,.2,.4,8),mat(0x0f172a));
-  brazier.position.set(p[0],3.8,p[2]);scene.add(brazier);
-  const flame=new THREE.Mesh(new THREE.OctahedronGeometry(.22),new THREE.MeshBasicMaterial({color:0xef4444}));
-  flame.position.set(p[0],4.1,p[2]);scene.add(flame);
-  flame.onBeforeRender=()=>{flame.scale.setScalar(0.9+Math.sin(performance.now()*0.01+p[0])*0.2)};
+// 1. Foundation Base & Octagonal Runed Podium
+const towerBase = new THREE.Mesh(
+  new THREE.CylinderGeometry(3.2, 3.8, 0.8, 8),
+  mat(0x1e293b, 0, 0.4, 0.8)
+);
+towerBase.position.y = 0.4;
+towerBase.receiveShadow = true;
+towerBase.castShadow = true;
+towerGroup.add(towerBase);
+
+// Base Outer Decorative Gold Rune Ring
+const baseGoldRing = new THREE.Mesh(
+  new THREE.TorusGeometry(3.5, 0.08, 8, 32),
+  mat(0xf59e0b, 0.8, 0.2, 0.9)
+);
+baseGoldRing.rotation.x = Math.PI / 2;
+baseGoldRing.position.y = 0.82;
+towerGroup.add(baseGoldRing);
+
+// 2. Middle Podium & Stairs
+const podium = new THREE.Mesh(
+  new THREE.CylinderGeometry(2.3, 2.8, 1.2, 8),
+  mat(0x334155, 0, 0.5, 0.6)
+);
+podium.position.y = 1.4;
+podium.castShadow = true;
+podium.receiveShadow = true;
+towerGroup.add(podium);
+
+// 3. Spire Tower Shaft (Arcane Spire Body)
+const shaft = new THREE.Mesh(
+  new THREE.CylinderGeometry(1.4, 2.0, 3.8, 12),
+  mat(0x0f172a, 0, 0.3, 0.8)
+);
+shaft.position.y = 3.9;
+shaft.castShadow = true;
+shaft.receiveShadow = true;
+towerGroup.add(shaft);
+
+// Spire Wall Decorative Pillars (4 Corner Gothic Buttresses with Glow Orbs)
+for (let i = 0; i < 4; i++) {
+  const angle = (i * Math.PI) / 2;
+  const px = Math.cos(angle) * 1.85;
+  const pz = Math.sin(angle) * 1.85;
+  const pillar = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.28, 0.4, 4.2, 8),
+    mat(0x3b82f6, 0.4, 0.2, 0.8)
+  );
+  pillar.position.set(px, 3.8, pz);
+  pillar.castShadow = true;
+  towerGroup.add(pillar);
+
+  const pOrb = new THREE.Mesh(
+    new THREE.SphereGeometry(0.22, 10, 10),
+    new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+  );
+  pOrb.position.set(px, 6.0, pz);
+  towerGroup.add(pOrb);
 }
 
-const roof=new THREE.Mesh(new THREE.ConeGeometry(3.2,1.8,4),mat(0x7c2d12));
-roof.position.set(0,3.3,0);roof.rotation.y=Math.PI/4;roof.castShadow=true;scene.add(roof);
+// 4. Upper Spire Crown Platform & Arches
+const crown = new THREE.Mesh(
+  new THREE.CylinderGeometry(1.8, 1.2, 0.6, 8),
+  mat(0xf59e0b, 0.6, 0.3, 0.9)
+);
+crown.position.y = 5.9;
+crown.castShadow = true;
+towerGroup.add(crown);
 
-const crystal=new THREE.Mesh(new THREE.OctahedronGeometry(.65),mat(0x06b6d4,0.9));
-crystal.position.set(0,2.8,2.7);scene.add(crystal);
+for (let i = 0; i < 4; i++) {
+  const angle = (i * Math.PI) / 2 + Math.PI / 4;
+  const arch = new THREE.Mesh(
+    new THREE.ConeGeometry(0.2, 1.6, 6),
+    mat(0xd97706, 0.6)
+  );
+  arch.rotation.z = Math.PI;
+  arch.position.set(Math.cos(angle) * 1.2, 6.8, Math.sin(angle) * 1.2);
+  towerGroup.add(arch);
+}
 
-const crystalRing=new THREE.Mesh(new THREE.TorusGeometry(0.9,0.03,8,24),new THREE.MeshBasicMaterial({color:0x67e8f9,transparent:true,opacity:0.75}));
-crystalRing.rotation.x=Math.PI/3;crystalRing.position.set(0,2.8,2.7);scene.add(crystalRing);
+// 5. Giant Floating Arcane Crystal Core (거대 마법 수정체)
+const crystalMat = new THREE.MeshPhongMaterial({
+  color: 0x06b6d4,
+  emissive: 0x0891b2,
+  specular: 0xffffff,
+  shininess: 100,
+  transparent: true,
+  opacity: 0.92
+});
+const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(1.1, 0), crystalMat);
+crystal.position.set(0, 7.6, 0);
+crystal.castShadow = true;
+towerGroup.add(crystal);
+
+// Floating Secondary Mini Crystals Orbiting Core
+const miniCrystals = [];
+for (let i = 0; i < 3; i++) {
+  const mc = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.3, 0),
+    new THREE.MeshBasicMaterial({ color: 0x67e8f9 })
+  );
+  mc.position.set(0, 7.6, 0);
+  towerGroup.add(mc);
+  miniCrystals.push(mc);
+}
+
+// Dual Floating Arcane Energy Rings
+const crystalRing1 = new THREE.Mesh(
+  new THREE.TorusGeometry(1.7, 0.05, 12, 48),
+  new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 })
+);
+crystalRing1.rotation.x = Math.PI / 3;
+crystalRing1.position.set(0, 7.6, 0);
+towerGroup.add(crystalRing1);
+
+const crystalRing2 = new THREE.Mesh(
+  new THREE.TorusGeometry(1.3, 0.04, 12, 48),
+  new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.8 })
+);
+crystalRing2.rotation.x = -Math.PI / 4;
+crystalRing2.position.set(0, 7.6, 0);
+towerGroup.add(crystalRing2);
+
+// Point Light from Tower Crystal
+const crystalLight = new THREE.PointLight(0x06b6d4, 2.5, 18);
+crystalLight.position.set(0, 7.6, 0);
+towerGroup.add(crystalLight);
+
+scene.add(towerGroup);
 
 /* Gate Portals */
 for(const g of GATES) {
@@ -1220,9 +1331,20 @@ let last=performance.now();
 function animate(now){
   const dt=Math.min(.033,Math.max(0,(now-last)/1000));last=now;
   update(dt);
-  crystal.rotation.y+=dt*1.4;
-  crystal.position.y=2.8+Math.sin(now*.003)*.1;
-  crystalRing.rotation.z+=dt*1.0;
+  crystal.rotation.y += dt * 1.2;
+  crystal.position.y = 7.6 + Math.sin(now * 0.003) * 0.18;
+  crystalRing1.rotation.z += dt * 0.9;
+  crystalRing2.rotation.z -= dt * 1.3;
+  crystalLight.intensity = 2.2 + Math.sin(now * 0.004) * 0.5;
+
+  miniCrystals.forEach((mc, idx) => {
+    const angle = now * 0.002 + (idx * Math.PI * 2 / 3);
+    const r = 1.8;
+    mc.position.x = Math.cos(angle) * r;
+    mc.position.z = Math.sin(angle) * r;
+    mc.position.y = 7.6 + Math.sin(now * 0.005 + idx) * 0.25;
+    mc.rotation.y += dt * 2.0;
+  });
   renderer.render(scene,camera);
   requestAnimationFrame(animate);
 }
