@@ -1910,7 +1910,11 @@ $('resumeBtn').onclick=()=>{SoundManager.play('click');state='play';hide('pause'
 $('restartBtn').onclick=()=>{SoundManager.play('click');hideAll();show('start');state='menu'};
 $('victoryBtn').onclick=()=>{SoundManager.play('click');hideAll();show('start');state='menu'};
 
-/* ═══ MOBILE TOUCH JOYSTICK CONTROLLER ═══ */
+/* ═══ MOBILE TOUCH JOYSTICK CONTROLLER ═══
+   모바일에서는 게임 화면의 빈 공간 어디를 터치해도
+   그 지점을 가상 조이스틱의 중심으로 사용합니다.
+   버튼/스킬/모달 등 UI를 터치한 경우에는 이동 입력을 만들지 않습니다.
+═══════════════════════════════════════════════════════════ */
 const joystickEl = $('touchJoystick');
 const knobEl = $('joystickKnob');
 
@@ -1918,15 +1922,32 @@ if (joystickEl && knobEl) {
   let joystickActive = false;
   let touchId = null;
   let joyRect = null;
+  let originX = 0;
+  let originY = 0;
+
+  const isGameplayTouch = target => {
+    if (state !== 'play') return false;
+    if (!target || !target.closest) return true;
+    return !target.closest(
+      'button, input, select, textarea, a, .skillSlot, .overlay, #hud, #skillBar'
+    );
+  };
+
+  function placeJoystick(x, y) {
+    const size = joystickEl.offsetWidth || 90;
+    const half = size / 2;
+    const left = Math.max(8, Math.min(innerWidth - size - 8, x - half));
+    const top = Math.max(8, Math.min(innerHeight - size - 8, y - half));
+    joystickEl.style.left = left + 'px';
+    joystickEl.style.top = top + 'px';
+    joystickEl.style.right = 'auto';
+    joystickEl.style.bottom = 'auto';
+  }
 
   function updateJoystick(clientX, clientY) {
-    if (!joyRect) joyRect = joystickEl.getBoundingClientRect();
-    const centerX = joyRect.left + joyRect.width / 2;
-    const centerY = joyRect.top + joyRect.height / 2;
-    const maxRadius = joyRect.width / 2;
-
-    let dx = clientX - centerX;
-    let dy = clientY - centerY;
+    const maxRadius = (joystickEl.offsetWidth || 90) / 2;
+    let dx = clientX - originX;
+    let dy = clientY - originY;
     const dist = Math.hypot(dx, dy);
 
     if (dist > maxRadius) {
@@ -1942,55 +1963,69 @@ if (joystickEl && knobEl) {
   function resetJoystick() {
     joystickActive = false;
     touchId = null;
+    joyRect = null;
     knobEl.style.transform = 'translate(0px, 0px)';
     touchDir.x = 0;
     touchDir.z = 0;
   }
 
-  joystickEl.addEventListener('touchstart', e => {
-    e.preventDefault();
-    if (joystickActive) return;
+  window.addEventListener('touchstart', e => {
+    if (joystickActive || !e.changedTouches.length) return;
     const t = e.changedTouches[0];
+
+    // 게임 플레이 중 빈 화면 어디든 터치하면 이동 시작
+    if (!isGameplayTouch(e.target)) return;
+
+    e.preventDefault();
     touchId = t.identifier;
     joystickActive = true;
+    originX = t.clientX;
+    originY = t.clientY;
+    placeJoystick(originX, originY);
     joyRect = joystickEl.getBoundingClientRect();
     updateJoystick(t.clientX, t.clientY);
   }, { passive: false });
 
   window.addEventListener('touchmove', e => {
     if (!joystickActive) return;
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      const t = e.changedTouches[i];
+    for (const t of e.changedTouches) {
       if (t.identifier === touchId) {
+        e.preventDefault();
         updateJoystick(t.clientX, t.clientY);
         break;
       }
     }
-  }, { passive: true });
+  }, { passive: false });
 
   window.addEventListener('touchend', e => {
     if (!joystickActive) return;
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      if (e.changedTouches[i].identifier === touchId) {
+    for (const t of e.changedTouches) {
+      if (t.identifier === touchId) {
         resetJoystick();
         break;
       }
     }
-  });
-  window.addEventListener('touchcancel', resetJoystick);
+  }, { passive: false });
 
-  // Mouse fallback for testing joystick on desktop
+  window.addEventListener('touchcancel', resetJoystick, { passive: true });
+
+  // Mouse fallback for desktop testing
   let isMouseDown = false;
   joystickEl.addEventListener('mousedown', e => {
     isMouseDown = true;
-    joyRect = joystickEl.getBoundingClientRect();
+    originX = e.clientX;
+    originY = e.clientY;
+    placeJoystick(originX, originY);
     updateJoystick(e.clientX, e.clientY);
   });
   window.addEventListener('mousemove', e => {
     if (isMouseDown) updateJoystick(e.clientX, e.clientY);
   });
   window.addEventListener('mouseup', () => {
-    if (isMouseDown) { isMouseDown = false; resetJoystick(); }
+    if (isMouseDown) {
+      isMouseDown = false;
+      resetJoystick();
+    }
   });
 }
 
