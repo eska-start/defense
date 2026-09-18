@@ -8,13 +8,475 @@
 const $=id=>document.getElementById(id);
 const show=id=>$(id)?.classList.remove('hidden');
 const hide=id=>$(id)?.classList.add('hidden');
-const hideAll=()=>['start','heroSelect','skillUp','shop','pause','gameover','victory','deadOverlay'].forEach(hide);
+const hideAll=()=>['start','heroSelect','skillUp','shop','soundModal','pause','gameover','victory','deadOverlay'].forEach(hide);
 
 /* ─── CONFIG ─── */
 const MAX_WAVE=30,MAP_H=15,TWR_RNG=6.5,TWR_DMG=28,TWR_RATE=1.0,RESPAWN=5;
 const GATES=[new THREE.Vector3(0,0,-15),new THREE.Vector3(15,0,0),new THREE.Vector3(0,0,15),new THREE.Vector3(-15,0,0)];
 const GNAMES=['북','동','남','서'];
 const SK='QWER'.split('');
+
+/* ═══ SOUND & BGM SYSTEM (Dual Engine: Web Audio API + HTML5 Audio) ═══ */
+const SoundManager = {
+  ctx: null,
+  masterGain: null,
+  sfxGain: null,
+  bgmEl: null,
+  bgmVol: 0.5,
+  sfxVol: 0.7,
+  isMuted: false,
+  initialized: false,
+
+  init() {
+    if (this.initialized) return;
+    this.initialized = true;
+    this.bgmEl = $('bgmAudio');
+
+    // Load saved settings (Default is unmuted with 50% BGM, 70% SFX)
+    const savedMute = localStorage.getItem('xhero_muted_v2');
+    this.isMuted = savedMute === 'true';
+    const savedBgm = localStorage.getItem('xhero_bgm_vol');
+    if (savedBgm !== null) this.bgmVol = Math.max(0, Math.min(1, parseFloat(savedBgm)));
+    const savedSfx = localStorage.getItem('xhero_sfx_vol');
+    if (savedSfx !== null) this.sfxVol = Math.max(0, Math.min(1, parseFloat(savedSfx)));
+
+    this.setupWebAudio();
+    this.bindControls();
+    this.updateUI();
+
+    // User gesture unlocking for audio playback
+    const unlock = () => {
+      this.resumeContext();
+      if (!this.isMuted) {
+        this.playBgm();
+      }
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+  },
+
+  setupWebAudio() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      this.ctx = new AudioCtx();
+      this.masterGain = this.ctx.createGain();
+      this.sfxGain = this.ctx.createGain();
+
+      this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : 1.0, this.ctx.currentTime);
+      this.sfxGain.gain.setValueAtTime(this.sfxVol, this.ctx.currentTime);
+
+      this.sfxGain.connect(this.masterGain);
+      this.masterGain.connect(this.ctx.destination);
+    } catch (e) {
+      console.warn('Web Audio setup failed:', e);
+    }
+  },
+
+  resumeContext() {
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
+  },
+
+  playBgm() {
+    this.resumeContext();
+    if (!this.bgmEl) return;
+    this.bgmEl.volume = this.isMuted ? 0 : this.bgmVol;
+    const p = this.bgmEl.play();
+    if (p && p.catch) {
+      p.catch(() => {
+        // Autoplay may be blocked until user clicks
+      });
+    }
+  },
+
+  stopBgm() {
+    if (this.bgmEl) {
+      this.bgmEl.pause();
+    }
+  },
+
+  setBgmVolume(val) {
+    this.bgmVol = Math.max(0, Math.min(1, val));
+    localStorage.setItem('xhero_bgm_vol', this.bgmVol.toString());
+    if (this.bgmEl) {
+      this.bgmEl.volume = this.isMuted ? 0 : this.bgmVol;
+      if (!this.isMuted && this.bgmEl.paused && this.bgmVol > 0) {
+        this.playBgm();
+      }
+    }
+    this.updateUI();
+  },
+
+  setSfxVolume(val) {
+    this.sfxVol = Math.max(0, Math.min(1, val));
+    localStorage.setItem('xhero_sfx_vol', this.sfxVol.toString());
+    if (this.ctx && this.sfxGain) {
+      this.sfxGain.gain.setValueAtTime(this.sfxVol, this.ctx.currentTime);
+    }
+    this.updateUI();
+  },
+
+  toggleMute() {
+    this.isMuted = !this.isMuted;
+    localStorage.setItem('xhero_muted_v2', this.isMuted ? 'true' : 'false');
+    if (this.bgmEl) {
+      this.bgmEl.volume = this.isMuted ? 0 : this.bgmVol;
+      if (this.isMuted) {
+        this.stopBgm();
+      } else {
+        this.playBgm();
+      }
+    }
+    if (this.ctx && this.masterGain) {
+      this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : 1.0, this.ctx.currentTime);
+    }
+    this.updateUI();
+  },
+
+  openModal() {
+    this.init();
+    this.resumeContext();
+    this.updateUI();
+    show('soundModal');
+  },
+
+  closeModal() {
+    hide('soundModal');
+  },
+
+  bindControls() {
+    const bgmSlider = $('bgmSlider');
+    const sfxSlider = $('sfxSlider');
+    const modalMuteBtn = $('modalMuteBtn');
+    const soundClose = $('soundClose');
+    const soundBtn = $('soundBtn');
+
+    if (bgmSlider) {
+      bgmSlider.oninput = () => {
+        this.setBgmVolume(bgmSlider.value / 100);
+      };
+    }
+    if (sfxSlider) {
+      sfxSlider.oninput = () => {
+        this.setSfxVolume(sfxSlider.value / 100);
+        this.play('click');
+      };
+    }
+    if (modalMuteBtn) {
+      modalMuteBtn.onclick = () => {
+        this.toggleMute();
+      };
+    }
+    if (soundClose) {
+      soundClose.onclick = () => {
+        this.play('click');
+        this.closeModal();
+      };
+    }
+    if (soundBtn) {
+      soundBtn.onclick = (e) => {
+        e.preventDefault();
+        this.play('click');
+        this.openModal();
+      };
+    }
+  },
+
+  updateUI() {
+    const bgmSlider = $('bgmSlider');
+    const sfxSlider = $('sfxSlider');
+    const bgmVolText = $('bgmVolText');
+    const sfxVolText = $('sfxVolText');
+    const modalMuteBtn = $('modalMuteBtn');
+    const soundBtn = $('soundBtn');
+
+    const bgmPercent = Math.round(this.bgmVol * 100);
+    const sfxPercent = Math.round(this.sfxVol * 100);
+
+    if (bgmSlider) bgmSlider.value = bgmPercent;
+    if (sfxSlider) sfxSlider.value = sfxPercent;
+    if (bgmVolText) bgmVolText.textContent = this.isMuted ? '0% (음소거)' : bgmPercent + '%';
+    if (sfxVolText) sfxVolText.textContent = this.isMuted ? '0% (음소거)' : sfxPercent + '%';
+
+    if (modalMuteBtn) {
+      modalMuteBtn.textContent = this.isMuted ? '🔇 음소거 해제' : '🔊 전체 음소거';
+      modalMuteBtn.classList.toggle('muted', this.isMuted);
+    }
+    if (soundBtn) {
+      soundBtn.textContent = this.isMuted ? '🔇' : '🔊';
+      soundBtn.classList.toggle('muted', this.isMuted);
+      soundBtn.title = '사운드 설정 (BGM / SFX)';
+    }
+  },
+
+  play(id) {
+    if (this.isMuted || this.sfxVol <= 0) return;
+    if (!this.ctx) this.setupWebAudio();
+    if (!this.ctx) return;
+    this.resumeContext();
+
+    const t = this.ctx.currentTime;
+    const dest = this.sfxGain || this.ctx.destination;
+
+    try {
+      switch (id) {
+        case 'slash': {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(460, t);
+          osc.frequency.exponentialRampToValueAtTime(110, t + 0.12);
+          gain.gain.setValueAtTime(0.3, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+          osc.connect(gain); gain.connect(dest);
+          osc.start(t); osc.stop(t + 0.12);
+          break;
+        }
+        case 'shoot': {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(880, t);
+          osc.frequency.exponentialRampToValueAtTime(220, t + 0.14);
+          gain.gain.setValueAtTime(0.25, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+          osc.connect(gain); gain.connect(dest);
+          osc.start(t); osc.stop(t + 0.14);
+          break;
+        }
+        case 'magic_orb': {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(320, t);
+          osc.frequency.linearRampToValueAtTime(680, t + 0.16);
+          gain.gain.setValueAtTime(0.28, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+          osc.connect(gain); gain.connect(dest);
+          osc.start(t); osc.stop(t + 0.18);
+          break;
+        }
+        case 'hit_monster': {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(220, t);
+          osc.frequency.exponentialRampToValueAtTime(60, t + 0.08);
+          gain.gain.setValueAtTime(0.2, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+          osc.connect(gain); gain.connect(dest);
+          osc.start(t); osc.stop(t + 0.08);
+          break;
+        }
+        case 'hit_hero': {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(140, t);
+          osc.frequency.exponentialRampToValueAtTime(50, t + 0.14);
+          gain.gain.setValueAtTime(0.25, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+          osc.connect(gain); gain.connect(dest);
+          osc.start(t); osc.stop(t + 0.14);
+          break;
+        }
+        case 'monster_die': {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, t);
+          osc.frequency.exponentialRampToValueAtTime(1040, t + 0.12);
+          gain.gain.setValueAtTime(0.25, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+          osc.connect(gain); gain.connect(dest);
+          osc.start(t); osc.stop(t + 0.14);
+          break;
+        }
+        case 'tower_hit': {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(320, t);
+          osc.frequency.setValueAtTime(200, t + 0.08);
+          gain.gain.setValueAtTime(0.3, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+          osc.connect(gain); gain.connect(dest);
+          osc.start(t); osc.stop(t + 0.2);
+          break;
+        }
+        case 'skill_wind': {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(650, t);
+          osc.frequency.exponentialRampToValueAtTime(140, t + 0.24);
+          gain.gain.setValueAtTime(0.35, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
+          osc.connect(gain); gain.connect(dest);
+          osc.start(t); osc.stop(t + 0.24);
+          break;
+        }
+        case 'skill_shield': {
+          [523, 659, 784].forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(f, t + i * 0.06);
+            gain.gain.setValueAtTime(0.22, t + i * 0.06);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.06 + 0.26);
+            osc.connect(gain); gain.connect(dest);
+            osc.start(t + i * 0.06); osc.stop(t + i * 0.06 + 0.26);
+          });
+          break;
+        }
+        case 'skill_taunt': {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(150, t);
+          osc.frequency.exponentialRampToValueAtTime(65, t + 0.32);
+          gain.gain.setValueAtTime(0.38, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+          osc.connect(gain); gain.connect(dest);
+          osc.start(t); osc.stop(t + 0.32);
+          break;
+        }
+        case 'skill_meteor': {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(110, t);
+          osc.frequency.exponentialRampToValueAtTime(25, t + 0.45);
+          gain.gain.setValueAtTime(0.42, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.48);
+          osc.connect(gain); gain.connect(dest);
+          osc.start(t); osc.stop(t + 0.48);
+          break;
+        }
+        case 'skill_heal': {
+          [440, 554, 659, 880].forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(f, t + i * 0.07);
+            gain.gain.setValueAtTime(0.24, t + i * 0.07);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.07 + 0.3);
+            osc.connect(gain); gain.connect(dest);
+            osc.start(t + i * 0.07); osc.stop(t + i * 0.07 + 0.3);
+          });
+          break;
+        }
+        case 'skill_revive': {
+          [392, 523, 659, 784, 1046].forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(f, t + i * 0.08);
+            gain.gain.setValueAtTime(0.28, t + i * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.08 + 0.35);
+            osc.connect(gain); gain.connect(dest);
+            osc.start(t + i * 0.08); osc.stop(t + i * 0.08 + 0.35);
+          });
+          break;
+        }
+        case 'level_up': {
+          [523, 659, 784, 1046].forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(f, t + i * 0.09);
+            gain.gain.setValueAtTime(0.3, t + i * 0.09);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.09 + 0.35);
+            osc.connect(gain); gain.connect(dest);
+            osc.start(t + i * 0.09); osc.stop(t + i * 0.09 + 0.35);
+          });
+          break;
+        }
+        case 'gold': {
+          [987, 1318].forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(f, t + i * 0.06);
+            gain.gain.setValueAtTime(0.22, t + i * 0.06);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.06 + 0.18);
+            osc.connect(gain); gain.connect(dest);
+            osc.start(t + i * 0.06); osc.stop(t + i * 0.06 + 0.18);
+          });
+          break;
+        }
+        case 'buy': {
+          [784, 987, 1174].forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(f, t + i * 0.05);
+            gain.gain.setValueAtTime(0.26, t + i * 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.05 + 0.22);
+            osc.connect(gain); gain.connect(dest);
+            osc.start(t + i * 0.05); osc.stop(t + i * 0.05 + 0.22);
+          });
+          break;
+        }
+        case 'craft': {
+          [523, 659, 784, 1046, 1318].forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(f, t + i * 0.06);
+            gain.gain.setValueAtTime(0.28, t + i * 0.06);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.06 + 0.3);
+            osc.connect(gain); gain.connect(dest);
+            osc.start(t + i * 0.06); osc.stop(t + i * 0.06 + 0.3);
+          });
+          break;
+        }
+        case 'click': {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(950, t);
+          osc.frequency.exponentialRampToValueAtTime(450, t + 0.04);
+          gain.gain.setValueAtTime(0.18, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+          osc.connect(gain); gain.connect(dest);
+          osc.start(t); osc.stop(t + 0.04);
+          break;
+        }
+        case 'victory': {
+          [523, 659, 784, 1046, 1318, 1568].forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(f, t + i * 0.1);
+            gain.gain.setValueAtTime(0.32, t + i * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 0.5);
+            osc.connect(gain); gain.connect(dest);
+            osc.start(t + i * 0.1); osc.stop(t + i * 0.1 + 0.5);
+          });
+          break;
+        }
+        case 'gameover': {
+          [440, 415, 392, 349].forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(f, t + i * 0.22);
+            gain.gain.setValueAtTime(0.26, t + i * 0.22);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.22 + 0.35);
+            osc.connect(gain); gain.connect(dest);
+            osc.start(t + i * 0.22); osc.stop(t + i * 0.22 + 0.35);
+          });
+          break;
+        }
+      }
+    } catch(e) {}
+  }
+};
 
 /* ─── HEROES (Title Concept Art Witchbrook & Little Witch Characters) ─── */
 const HEROES={
@@ -540,6 +1002,7 @@ function nearest(pos,range){
 function hitE(e,dmg,isCrit=false){
   if(e.dead)return;
   e.hp-=dmg;
+  SoundManager.play('hit_monster');
   showDamageText(e.pos, Math.round(dmg), isCrit ? '#fde047' : '#ffffff', isCrit);
   if(e.anim){
     e.anim.hitTimer = 0.12;
@@ -552,6 +1015,8 @@ function hitE(e,dmg,isCrit=false){
 function killE(e){
   if(e.dead)return;
   e.dead=true;gold+=e.gold;gainXP(e.xp);
+  SoundManager.play('monster_die');
+  SoundManager.play('gold');
   if(e.hpBarEl){e.hpBarEl.remove();e.hpBarEl=null}
   burst(e.pos,e.kind==='boss'?0xf59e0b:0xe4e4e7,e.kind==='boss'?30:12);
 }
@@ -559,6 +1024,7 @@ function gainXP(v){
   hero.xp+=v;
   while(hero.xp>=hero.nextXP){hero.xp-=hero.nextXP;hero.level++;hero.nextXP=Math.floor(hero.nextXP*1.25);
     hero.skillPoints++;hero.maxHp+=25;hero.hp=Math.min(hero.hp+25,hero.maxHp);hero.damage+=3;
+    SoundManager.play('level_up');
     notify('레벨 '+hero.level+'! 스킬포인트 +1');
     if(hero.skillPoints===1)setTimeout(()=>{if(state==='play'&&hero.skillPoints>0){show('skillPing')}},300);
   }
@@ -594,6 +1060,7 @@ function heroAttack(){
 
   const isRng=HEROES[hero.type].rng>4;
   if(isRng){
+    SoundManager.play(hero.type==='mage'?'magic_orb':'shoot');
     const col=hero.type==='mage'?0x38bdf8:0x22c55e;
     const obj=new THREE.Mesh(new THREE.SphereGeometry(.14,8,8),new THREE.MeshBasicMaterial({color:col}));
     obj.position.copy(hero.pos);obj.position.y=1.2;scene.add(obj);
@@ -601,6 +1068,7 @@ function heroAttack(){
     if(hero.poison>0){p.poisonDmg=hero.poisonDmg;p.poisonDur=hero.poison}
     projectiles.push(p);
   }else{
+    SoundManager.play('slash');
     hitE(target,dmg,isCrit);if(hero.lifesteal)hero.hp=Math.min(hero.maxHp,hero.hp+hero.lifesteal);
     if(hero.poison>0){target.poisonTimer=hero.poison;target.poisonDmg=hero.poisonDmg}
     slashFx(target.pos, HEROES[hero.type].color);
@@ -619,6 +1087,7 @@ function towerAttack(){
   if(tower.atkTimer>0)return;
   const t=nearest(new THREE.Vector3(0,0,0),TWR_RNG);if(!t)return;
   tower.atkTimer=TWR_RATE;
+  SoundManager.play('shoot');
   const obj=new THREE.Mesh(new THREE.SphereGeometry(.2,8,8),new THREE.MeshBasicMaterial({color:0x34d399}));
   obj.position.set(0,3.8,0);scene.add(obj);
   projectiles.push({obj,target:t,dmg:TWR_DMG*(1+wave*.02),splash:.6,tower:true});
@@ -636,6 +1105,22 @@ function useSkill(key){
   hero.skillCDs[key]=sk.cd[lv];
   if(hero.anim) hero.anim.attackTimer = 0.35;
   const t=sk.type;
+
+  if(t==='aoe'||t==='multi'){
+    SoundManager.play('skill_wind');
+  }else if(t==='aoe_stun'||t==='proj_aoe'||t==='execute'){
+    SoundManager.play('skill_meteor');
+  }else if(t==='buff_def'||t==='shield_self'||t==='shield_tower'){
+    SoundManager.play('skill_shield');
+  }else if(t==='taunt'||t==='poison_buff'||t==='zone'){
+    SoundManager.play('skill_taunt');
+  }else if(t==='holy'||t==='heal'){
+    SoundManager.play('skill_heal');
+  }else if(t==='revive'){
+    SoundManager.play('skill_revive');
+  }else{
+    SoundManager.play('magic_orb');
+  }
 
   if(t==='aoe'){
     const r=sk.r||5,dmg=hero.damage*sk.mul[lv]*hero.power;
@@ -1102,18 +1587,22 @@ function update(dt){
   }
 
   /* wave done */
+  /* wave clear */
   if(spawned>=enemyCount()&&alive===0){
     if(wave>=MAX_WAVE){state='victory';
       $('victoryDetail').textContent=`레벨 ${hero.level} · ${gold}G · ${HEROES[hero.type].name}`;
+      SoundManager.play('victory');
       show('victory');return}
     wave++;spawned=0;spawnClock=2;gold+=100+wave*10;
     tower.hp=Math.min(tower.maxHp,tower.hp+200);pickSides();
+    SoundManager.play('level_up');
     notify('웨이브 '+wave+' · '+curSides.map(i=>GNAMES[i]).join('+'))
   }
 
   /* tower fall */
   if(tower.hp<=0){tower.hp=0;state='over';
     $('overDetail').textContent=`웨이브 ${wave}/${MAX_WAVE} · 레벨 ${hero.level} · ${gold}G · ${HEROES[hero.type].name}`;
+    SoundManager.play('gameover');
     show('gameover')}
 
   syncHud();
@@ -1135,6 +1624,7 @@ function buyItem(item){
   if(inventory.length>=8){notify('인벤토리 가득!');return}
   if(gold<item.cost){notify('골드 부족!');return}
   gold-=item.cost;inventory.push({...item,stats:{...item.stats}});recalcStats();
+  SoundManager.play('buy');
   notify(item.name+' 획득');renderShop();syncHud();
 }
 function canCombine(r){
@@ -1148,12 +1638,16 @@ function doCombine(r){
   for(const mid of need){const idx=inventory.findIndex(i=>i.id===mid);if(idx!==-1)inventory.splice(idx,1)}
   if(r.extra>0)gold-=r.extra;
   inventory.push({id:r.id,name:r.name,desc:r.desc,stats:{...r.stats},tier:r.tier,cost:0});
-  recalcStats();notify(r.name+' 조합 완료!');selectedInvIndex=-1;renderShop();syncHud();
+  recalcStats();notify(r.name+' 조합 완료!');selectedInvIndex=-1;
+  SoundManager.play('craft');
+  renderShop();syncHud();
 }
 function sellItem(idx){
   const it=inventory[idx];if(!it)return;
   gold+=Math.floor((it.cost||0)*.5);inventory.splice(idx,1);recalcStats();
-  notify(it.name+' 판매 완료');selectedInvIndex=-1;renderShop();syncHud();
+  notify(it.name+' 판매 완료');selectedInvIndex=-1;
+  SoundManager.play('gold');
+  renderShop();syncHud();
 }
 
 /* ═══ UI ═══ */
@@ -1366,8 +1860,9 @@ function resetRun(){
   inventory=[];pickSides();
 }
 function beginHero(type){
+  SoundManager.init();SoundManager.playBgm();SoundManager.play('click');
   initHero(type);resetRun();makeHero();hideAll();state='play';
-  notify('웨이브 1 · '+curSides.map(i=>GNAMES[i]).join('+')+' 방향');syncHud()
+  notify('웨이브 1 · '+curSides.map(i=>GNAMES[i]).join('+')+' 방향');syncHud();
 }
 
 /* ═══ INPUT ═══ */
@@ -1375,15 +1870,22 @@ window.addEventListener('keydown',e=>{
   const k=e.key.toLowerCase();
   if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();
   keys.add(k);
+  if(k==='escape'){
+    if(!$('soundModal').classList.contains('hidden')){
+      SoundManager.closeModal();
+      return;
+    }
+  }
   if(state==='play'){
     if(k==='1')useSkill('Q');if(k==='2')useSkill('W');if(k==='3')useSkill('E');if(k==='4')useSkill('R');
-    if(k==='i'){openShop()}
-    if(k==='k'){openSkillUp()}
+    if(k==='i'){SoundManager.play('click');openShop()}
+    if(k==='k'){SoundManager.play('click');openSkillUp()}
+    if(k==='m'||k==='o'){SoundManager.play('click');SoundManager.openModal()}
     if(k==='escape'){state='pause';show('pause')}
   }else if(state==='shop'){
-    if(k==='escape'||k==='i')closeShop()
+    if(k==='escape'||k==='i'){SoundManager.play('click');closeShop()}
   }else if(state==='skillUp'){
-    if(k==='escape'||k==='k')closeSkillUp()
+    if(k==='escape'||k==='k'){SoundManager.play('click');closeSkillUp()}
   }else if(state==='pause'){
     if(k==='escape'){state='play';hide('pause')}
   }
@@ -1395,17 +1897,18 @@ for(const key of SK){const el=$('skill'+key);if(el)el.addEventListener('click',(
   if(state==='play')useSkill(key)})}
 
 /* buttons */
-$('startBtn').onclick=()=>{hide('start');buildHeroSelect();show('heroSelect')};
-$('shopBtn').onclick=e=>{e.preventDefault();if(state==='shop')closeShop();else openShop()};
-$('skillBtn').onclick=e=>{e.preventDefault();if(state==='skillUp')closeSkillUp();else openSkillUp()};
-$('tabBuy').onclick=()=>setShopTab('buy');
-$('tabRecipe').onclick=()=>setShopTab('recipe');
-$('tabInv').onclick=()=>setShopTab('inv');
-$('shopClose').onclick=closeShop;
-$('skillUpClose').onclick=closeSkillUp;
-$('resumeBtn').onclick=()=>{state='play';hide('pause')};
-$('restartBtn').onclick=()=>{hideAll();show('start');state='menu'};
-$('victoryBtn').onclick=()=>{hideAll();show('start');state='menu'};
+const sBtn=$('soundBtn');if(sBtn)sBtn.onclick=e=>{e.preventDefault();SoundManager.init();SoundManager.toggleMute()};
+$('startBtn').onclick=()=>{SoundManager.init();SoundManager.playBgm();SoundManager.play('click');hide('start');buildHeroSelect();show('heroSelect')};
+$('shopBtn').onclick=e=>{e.preventDefault();SoundManager.play('click');if(state==='shop')closeShop();else openShop()};
+$('skillBtn').onclick=e=>{e.preventDefault();SoundManager.play('click');if(state==='skillUp')closeSkillUp();else openSkillUp()};
+$('tabBuy').onclick=()=>{SoundManager.play('click');setShopTab('buy')};
+$('tabRecipe').onclick=()=>{SoundManager.play('click');setShopTab('recipe')};
+$('tabInv').onclick=()=>{SoundManager.play('click');setShopTab('inv')};
+$('shopClose').onclick=()=>{SoundManager.play('click');closeShop()};
+$('skillUpClose').onclick=()=>{SoundManager.play('click');closeSkillUp()};
+$('resumeBtn').onclick=()=>{SoundManager.play('click');state='play';hide('pause')};
+$('restartBtn').onclick=()=>{SoundManager.play('click');hideAll();show('start');state='menu'};
+$('victoryBtn').onclick=()=>{SoundManager.play('click');hideAll();show('start');state='menu'};
 
 /* ═══ MOBILE TOUCH JOYSTICK CONTROLLER ═══ */
 const joystickEl = $('touchJoystick');
@@ -1549,4 +2052,7 @@ window.testSpawnBoss = function() {
   return e;
 };
 
+SoundManager.init();
+
 })();
+

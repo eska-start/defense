@@ -100,6 +100,20 @@ body { touch-action: none; user-select: none; -webkit-user-select: none; }
 }
 .skillAction:hover { filter: brightness(1.12); }
 
+.soundAction {
+  padding: 6px 9px;
+  border-color: #15803d;
+  background: #16a34a;
+  box-shadow: inset 1px 1px 0 #86efac, inset -1px -1px 0 #14532d, 0 3px 0 #052e16;
+  font-size: 13px; line-height: 1;
+}
+.soundAction.muted {
+  border-color: #991b1b;
+  background: #dc2626;
+  box-shadow: inset 1px 1px 0 #fca5a5, inset -1px -1px 0 #7f1d1d, 0 3px 0 #450a0a;
+}
+.soundAction:hover { filter: brightness(1.15); }
+
 /* ─── COMPACT PIXEL SKILL HOTBAR (인게임 하단) ─── */
 #skillBar {
   position: absolute; z-index: 30;
@@ -542,4 +556,72 @@ body { touch-action: none; user-select: none; -webkit-user-select: none; }
     position: absolute; top: -26px; right: 0;
     margin-left: 0; padding: 3px 6px; font-size: 9px;
   }
+}
+
+/* ─── SOUND SETTINGS MODAL ─── */
+.soundCard {
+  width: min(92vw, 360px) !important;
+  padding: 16px 18px !important;
+  text-align: center;
+}
+.soundControls {
+  display: flex; flex-direction: column; gap: 12px;
+  margin: 12px 0 16px;
+}
+.soundRow {
+  display: flex; flex-direction: column; gap: 6px;
+  background: #09131d; padding: 8px 10px;
+  border: 2px solid #233548;
+  box-shadow: inset 1px 1px 0 #3b5066;
+}
+.soundLabel {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; font-weight: 700; color: #f1f5f9;
+}
+.soundLabel b {
+  font-family: monospace; color: var(--px-gold); font-size: 12px;
+}
+.pixelSlider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%; height: 12px;
+  background: #04080e;
+  border: 1px solid #334e68;
+  box-shadow: inset 1px 1px 0 #000;
+  outline: none; cursor: pointer;
+  margin: 4px 0 2px;
+}
+.pixelSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 18px;
+  background: #ca8a04;
+  border: 2px solid #fef08a;
+  box-shadow: inset 1px 1px 0 #fff, 0 2px 4px rgba(0,0,0,0.6);
+  cursor: pointer;
+}
+.pixelSlider::-moz-range-thumb {
+  width: 18px; height: 18px;
+  background: #ca8a04;
+  border: 2px solid #fef08a;
+  box-shadow: inset 1px 1px 0 #fff, 0 2px 4px rgba(0,0,0,0.6);
+  cursor: pointer;
+}
+.soundMuteRow {
+  display: flex; justify-content: center; margin-top: 2px;
+}
+.modalMuteBtn {
+  padding: 6px 14px !important;
+  font: 700 11px monospace !important;
+  background: #1e293b !important;
+  border: 2px solid #475569 !important;
+  color: #f8fafc !important;
+  box-shadow: inset 1px 1px 0 #94a3b8 !important;
+  cursor: pointer; margin-top: 0 !important;
+}
+.modalMuteBtn.muted {
+  background: #991b1b !important;
+  border-color: #ef4444 !important;
+  color: #fff !important;
+  box-shadow: inset 1px 1px 0 #fca5a5 !important;
 }

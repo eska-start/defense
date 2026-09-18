@@ -1,159 +1,211 @@
 <!doctype html>
 <html lang="ko">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="description" content="X Hero Defense - 워크래프트 유즈맵 X Hero 스타일 3D 디펜스 게임. 5영웅 × 4스킬, 아이템 조합, 30웨이브.">
-<title>X Hero Defense · 중앙 수호탑</title>
-<link rel="stylesheet" href="./style.css?v=pixel_icons_v1">
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
-<script>
-if (window.location.protocol === 'file:') {
-  fetch('http://localhost:8080/index.html', { method: 'HEAD', mode: 'no-cors' })
-    .then(() => { window.location.href = 'http://localhost:8080/index.html'; })
-    .catch(() => {});
-}
-window.addEventListener('error',e=>{const n=document.getElementById('notice');if(!n)return;const msg=e.message||'오류';if(e.error instanceof SyntaxError||/Unexpected token|SyntaxError/i.test(msg))return;n.textContent='오류: '+msg;n.classList.add('show')});
-</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="description" content="X Hero Defense - 워크래프트 유즈맵 X Hero 스타일 3D 디펜스 게임. 5영웅 × 4스킬, 아이템 조합, 30웨이브.">
+  <title>X Hero Defense · 중앙 수호탑</title>
+  <link rel="stylesheet" href="./style.css?v=sound_v3">
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
+  <script>
+    if (window.location.protocol === 'file:') {
+      fetch('http://localhost:8080/index.html', { method: 'HEAD', mode: 'no-cors' })
+        .then(() => { window.location.href = 'http://localhost:8080/index.html'; })
+        .catch(() => { });
+    }
+    window.addEventListener('error', e => { const n = document.getElementById('notice'); if (!n) return; const msg = e.message || '오류'; if (e.error instanceof SyntaxError || /Unexpected token|SyntaxError/i.test(msg)) return; n.textContent = '오류: ' + msg; n.classList.add('show') });
+  </script>
 </head>
+
 <body>
-<main id="game">
-<div id="canvas"></div>
-<div id="hpBars"></div>
+  <main id="game">
+    <div id="canvas"></div>
+    <div id="hpBars"></div>
 
-<!-- ─── HUD ─── -->
-<div id="hud">
-  <section class="hudBox left">
-    <b id="wave">WAVE 1 / 30</b>
-    <span id="direction">북 방향</span>
-    <span>적 <i id="waveCount">0 / 0</i></span>
-    <span><b id="heroName">전사</b> · <b id="level">LV 1</b> · XP <i id="xp">0 / 100</i></span>
-    <span>GOLD <i id="gold">500 G</i> · 인벤 <i id="inventoryText">0 / 8</i></span>
-  </section>
-  <section class="hudBox right">
-    <span>세계수 HP <i id="towerText">5000 / 5000</i></span>
-    <div class="bar"><div id="towerBar"></div></div>
-    <span>영웅 HP <i id="heroHpText">800 / 800</i></span>
-    <div class="bar hero"><div id="heroBar"></div></div>
-  </section>
-  <div class="hudButtons">
-    <button id="shopBtn" type="button" class="hudAction">상점 <small>I</small></button>
-    <button id="skillBtn" type="button" class="hudAction skillAction">스킬 <small>K</small></button>
-  </div>
-</div>
-
-<!-- ─── SKILL BAR ─── -->
-<div id="skillBar">
-  <div id="skillQ" class="skillSlot"><span class="sk-key">1</span><span class="sk-name">-</span><span class="sk-lv">-</span><span class="sk-cd"></span></div>
-  <div id="skillW" class="skillSlot"><span class="sk-key">2</span><span class="sk-name">-</span><span class="sk-lv">-</span><span class="sk-cd"></span></div>
-  <div id="skillE" class="skillSlot"><span class="sk-key">3</span><span class="sk-name">-</span><span class="sk-lv">-</span><span class="sk-cd"></span></div>
-  <div id="skillR" class="skillSlot ulti"><span class="sk-key">4</span><span class="sk-name">-</span><span class="sk-lv">-</span><span class="sk-cd"></span></div>
-  <span id="skillPoints" class="sp-text"></span>
-</div>
-
-<!-- ─── TOUCH JOYSTICK (MOBILE) ─── -->
-<div id="touchJoystick" class="touchJoystick">
-  <div id="joystickKnob" class="joystickKnob"></div>
-</div>
-
-<!-- ─── NOTICE ─── -->
-<div id="notice"></div>
-
-<!-- ─── DEAD OVERLAY ─── -->
-<div id="deadOverlay" class="overlay hidden">
-  <section class="card small">
-    <div class="eyebrow">DEAD</div>
-    <h1>💀 사망</h1>
-    <p><b id="deadTimer">5초</b> 후 부활</p>
-  </section>
-</div>
-
-<!-- ─── START ─── -->
-<div id="start" class="overlay">
-  <section class="card startCard">
-    <div class="conceptBanner">
-      <img src="./concept_art.jpg" alt="Witchbrook & Little Witch in the Woods Concept Art" class="conceptImg">
-      <div class="bannerOverlay"></div>
+    <!-- ─── HUD ─── -->
+    <div id="hud">
+      <section class="hudBox left">
+        <b id="wave">WAVE 1 / 30</b>
+        <span id="direction">북 방향</span>
+        <span>적 <i id="waveCount">0 / 0</i></span>
+        <span><b id="heroName">전사</b> · <b id="level">LV 1</b> · XP <i id="xp">0 / 100</i></span>
+        <span>GOLD <i id="gold">500 G</i> · 인벤 <i id="inventoryText">0 / 8</i></span>
+      </section>
+      <section class="hudBox right">
+        <span>세계수 HP <i id="towerText">5000 / 5000</i></span>
+        <div class="bar">
+          <div id="towerBar"></div>
+        </div>
+        <span>영웅 HP <i id="heroHpText">800 / 800</i></span>
+        <div class="bar hero">
+          <div id="heroBar"></div>
+        </div>
+      </section>
+      <div class="hudButtons">
+        <button id="soundBtn" type="button" class="hudAction soundAction" title="사운드 설정 (BGM/SFX)">🔊</button>
+        <button id="shopBtn" type="button" class="hudAction">상점 <small>I</small></button>
+        <button id="skillBtn" type="button" class="hudAction skillAction">스킬 <small>K</small></button>
+      </div>
     </div>
-    <div class="eyebrow">WITCHBROOK & LITTLE WITCH STYLE</div>
-    <h1>✨ 숲속의 신비한 마법 수호탑</h1>
-    <p>아기자기한 마녀와 영웅들과 함께 숲속의 마법 수정탑을 지키세요!<br>
-    5영웅 · 4스킬 · 신비한 마법 조합 · 30웨이브</p>
-    <button id="startBtn" type="button">✨ 모험 시작하기</button>
-    <div class="hint">WASD / 모바일 터치 조이스틱 이동 · 1234 터치 스킬 · I 상점 · K 스킬포인트 · ESC 일시정지</div>
-  </section>
-</div>
 
-<!-- ─── HERO SELECT ─── -->
-<div id="heroSelect" class="overlay hidden">
-  <section class="card wide">
-    <div class="eyebrow">CHOOSE YOUR HERO</div>
-    <h1>🛡️ 영웅 선택</h1>
-    <div id="heroChoices" class="heroChoices"></div>
-  </section>
-</div>
+    <!-- ─── BACKGROUND AUDIO ─── -->
+    <audio id="bgmAudio" src="./bgm_forest.wav" loop preload="auto"></audio>
 
-<!-- ─── SKILL UP ─── -->
-<div id="skillUp" class="overlay hidden">
-  <section class="card">
-    <div class="eyebrow">SKILL POINT</div>
-    <h1>스킬 투자 · 잔여 <span id="spRemain">0</span></h1>
-    <div id="skillChoices" class="choices"></div>
-    <button id="skillUpClose" type="button">닫기</button>
-  </section>
-</div>
-
-<!-- ─── SHOP ─── -->
-<div id="shop" class="overlay hidden">
-  <section class="card wide shopCard">
-    <div class="shopHead">
-      <div><div class="eyebrow">ITEM SHOP</div><h1>상점 & 조합</h1></div>
-      <strong id="shopGold">500 G</strong>
+    <!-- ─── SKILL BAR ─── -->
+    <div id="skillBar">
+      <div id="skillQ" class="skillSlot"><span class="sk-key">1</span><span class="sk-name">-</span><span
+          class="sk-lv">-</span><span class="sk-cd"></span></div>
+      <div id="skillW" class="skillSlot"><span class="sk-key">2</span><span class="sk-name">-</span><span
+          class="sk-lv">-</span><span class="sk-cd"></span></div>
+      <div id="skillE" class="skillSlot"><span class="sk-key">3</span><span class="sk-name">-</span><span
+          class="sk-lv">-</span><span class="sk-cd"></span></div>
+      <div id="skillR" class="skillSlot ulti"><span class="sk-key">4</span><span class="sk-name">-</span><span
+          class="sk-lv">-</span><span class="sk-cd"></span></div>
+      <span id="skillPoints" class="sp-text"></span>
     </div>
-    <div class="shopTabs">
-      <button id="tabBuy" type="button" class="tabBtn active">구매</button>
-      <button id="tabRecipe" type="button" class="tabBtn">조합</button>
-      <button id="tabInv" type="button" class="tabBtn">인벤토리</button>
+
+    <!-- ─── TOUCH JOYSTICK (MOBILE) ─── -->
+    <div id="touchJoystick" class="touchJoystick">
+      <div id="joystickKnob" class="joystickKnob"></div>
     </div>
-    <div id="shopBuyPanel"><div id="shopItems" class="shopItems"></div></div>
-    <div id="shopRecipePanel" class="hidden"><div id="recipeItems" class="shopItems"></div></div>
-    <div id="shopInvPanel" class="hidden"><div id="shopInventory" class="shopItems"></div></div>
-    <button id="shopClose" type="button">전투로 돌아가기</button>
-  </section>
-</div>
 
-<!-- ─── PAUSE ─── -->
-<div id="pause" class="overlay hidden">
-  <section class="card">
-    <div class="eyebrow">PAUSED</div>
-    <h1>⏸ 일시정지</h1>
-    <button id="resumeBtn" type="button">계속하기</button>
-  </section>
-</div>
+    <!-- ─── NOTICE ─── -->
+    <div id="notice"></div>
 
-<!-- ─── GAME OVER ─── -->
-<div id="gameover" class="overlay hidden">
-  <section class="card">
-    <div class="eyebrow">GAME OVER</div>
-    <h1>💔 수호탑 함락</h1>
-    <p id="overDetail"></p>
-    <button id="restartBtn" type="button">메뉴로</button>
-  </section>
-</div>
+    <!-- ─── DEAD OVERLAY ─── -->
+    <div id="deadOverlay" class="overlay hidden">
+      <section class="card small">
+        <div class="eyebrow">DEAD</div>
+        <h1>💀 사망</h1>
+        <p><b id="deadTimer">5초</b> 후 부활</p>
+      </section>
+    </div>
 
-<!-- ─── VICTORY ─── -->
-<div id="victory" class="overlay hidden">
-  <section class="card">
-    <div class="eyebrow">VICTORY</div>
-    <h1>🎉 완전 승리!</h1>
-    <p id="victoryDetail"></p>
-    <button id="victoryBtn" type="button">메뉴로</button>
-  </section>
-</div>
+    <!-- ─── START ─── -->
+    <div id="start" class="overlay">
+      <section class="card startCard">
+        <div class="conceptBanner">
+          <img src="./concept_art.jpg" alt="Witchbrook & Little Witch in the Woods Concept Art" class="conceptImg">
+          <div class="bannerOverlay"></div>
+        </div>
+        <div class="eyebrow">WITCHBROOK & LITTLE WITCH STYLE</div>
+        <h1>✨ 숲속의 신비한 마법 수호탑</h1>
+        <p>아기자기한 마녀와 영웅들과 함께 숲속의 마법 수정탑을 지키세요!<br>
+          5영웅 · 4스킬 · 신비한 마법 조합 · 30웨이브</p>
+        <button id="startBtn" type="button">✨ 모험 시작하기</button>
+        <div class="hint">WASD / 모바일 터치 조이스틱 이동 · 1234 터치 스킬 · I 상점 · K 스킬포인트 · ESC 일시정지</div>
+      </section>
+    </div>
 
-</main>
-<script src="./xhero.js?v=pixel_icons_v1"></script>
+    <!-- ─── HERO SELECT ─── -->
+    <div id="heroSelect" class="overlay hidden">
+      <section class="card wide">
+        <div class="eyebrow">CHOOSE YOUR HERO</div>
+        <h1>🛡️ 영웅 선택</h1>
+        <div id="heroChoices" class="heroChoices"></div>
+      </section>
+    </div>
+
+    <!-- ─── SKILL UP ─── -->
+    <div id="skillUp" class="overlay hidden">
+      <section class="card">
+        <div class="eyebrow">SKILL POINT</div>
+        <h1>스킬 투자 · 잔여 <span id="spRemain">0</span></h1>
+        <div id="skillChoices" class="choices"></div>
+        <button id="skillUpClose" type="button">닫기</button>
+      </section>
+    </div>
+
+    <!-- ─── SHOP ─── -->
+    <div id="shop" class="overlay hidden">
+      <section class="card wide shopCard">
+        <div class="shopHead">
+          <div>
+            <div class="eyebrow">ITEM SHOP</div>
+            <h1>상점 & 조합</h1>
+          </div>
+          <strong id="shopGold">500 G</strong>
+        </div>
+        <div class="shopTabs">
+          <button id="tabBuy" type="button" class="tabBtn active">구매</button>
+          <button id="tabRecipe" type="button" class="tabBtn">조합</button>
+          <button id="tabInv" type="button" class="tabBtn">인벤토리</button>
+        </div>
+        <div id="shopBuyPanel">
+          <div id="shopItems" class="shopItems"></div>
+        </div>
+        <div id="shopRecipePanel" class="hidden">
+          <div id="recipeItems" class="shopItems"></div>
+        </div>
+        <div id="shopInvPanel" class="hidden">
+          <div id="shopInventory" class="shopItems"></div>
+        </div>
+        <button id="shopClose" type="button">전투로 돌아가기</button>
+      </section>
+    </div>
+
+    <!-- ─── SOUND SETTINGS ─── -->
+    <div id="soundModal" class="overlay hidden">
+      <section class="card soundCard">
+        <div class="eyebrow">AUDIO SETTINGS</div>
+        <h1>🎵 사운드 설정</h1>
+        <div class="soundControls">
+          <div class="soundRow">
+            <div class="soundLabel">
+              <span>배경음악 (BGM)</span>
+              <b id="bgmVolText">50%</b>
+            </div>
+            <input type="range" id="bgmSlider" min="0" max="100" value="50" class="pixelSlider">
+          </div>
+          <div class="soundRow">
+            <div class="soundLabel">
+              <span>효과음 (SFX)</span>
+              <b id="sfxVolText">70%</b>
+            </div>
+            <input type="range" id="sfxSlider" min="0" max="100" value="70" class="pixelSlider">
+          </div>
+          <div class="soundMuteRow">
+            <button id="modalMuteBtn" type="button" class="modalMuteBtn">🔊 전체 음소거</button>
+          </div>
+        </div>
+        <button id="soundClose" type="button">닫기</button>
+      </section>
+    </div>
+
+    <!-- ─── PAUSE ─── -->
+    <div id="pause" class="overlay hidden">
+      <section class="card">
+        <div class="eyebrow">PAUSED</div>
+        <h1>⏸ 일시정지</h1>
+        <button id="resumeBtn" type="button">계속하기</button>
+      </section>
+    </div>
+
+    <!-- ─── GAME OVER ─── -->
+    <div id="gameover" class="overlay hidden">
+      <section class="card">
+        <div class="eyebrow">GAME OVER</div>
+        <h1>💔 수호탑 함락</h1>
+        <p id="overDetail"></p>
+        <button id="restartBtn" type="button">메뉴로</button>
+      </section>
+    </div>
+
+    <!-- ─── VICTORY ─── -->
+    <div id="victory" class="overlay hidden">
+      <section class="card">
+        <div class="eyebrow">VICTORY</div>
+        <h1>🎉 완전 승리!</h1>
+        <p id="victoryDetail"></p>
+        <button id="victoryBtn" type="button">메뉴로</button>
+      </section>
+    </div>
+
+  </main>
+  <script src="./xhero.js?v=sound_v3"></script>
 </body>
+
 </html>
