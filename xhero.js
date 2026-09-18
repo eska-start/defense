@@ -259,8 +259,8 @@ towerGroup.add(crystalRing2);
 // Point Light from Tower Crystal
 const crystalLight = new THREE.PointLight(0x06b6d4, 2.5, 18);
 crystalLight.position.set(0, 7.6, 0);
-towerGroup.add(crystalLight);
-
+// Scale central tower to ~3x character height (1.8 * 3 = 5.4 units)
+towerGroup.scale.setScalar(0.62);
 scene.add(towerGroup);
 
 /* Gate Portals */
