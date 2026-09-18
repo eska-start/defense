@@ -1178,6 +1178,12 @@ function syncHud(){
     const el=$('skill'+key);if(!el)continue;
     const sk=HEROES[hero.type]?.skills[key];if(!sk)continue;
     const lv=hero.skillLevels[key],cd=hero.skillCDs[key];
+    const iconUrl=`./icons/skill_${hero.type}_${key}.png`;
+    if(el.dataset.bg!==iconUrl){
+      el.style.backgroundImage=`url('${iconUrl}')`;
+      el.dataset.bg=iconUrl;
+    }
+    el.title=`${sk.name} [${'1234'['QWER'.indexOf(key)]}]\n${sk.desc}`;
     el.querySelector('.sk-name').textContent=sk.name;
     el.querySelector('.sk-lv').textContent=lv>0?'Lv'+lv:'-';
     const cdEl=el.querySelector('.sk-cd');
@@ -1194,16 +1200,39 @@ function renderShop(){
   if(!box)return;$('shopGold').textContent=gold+' G';
 
   box.replaceChildren();
-  for(const item of ITEMS){const b=document.createElement('button');b.type='button';b.className='shopItem';
-    b.innerHTML=`<strong>${item.name}</strong><span>${item.desc}</span><em>${item.cost} G</em>`;
-    b.onclick=()=>buyItem(item);box.appendChild(b)}
+  for(const item of ITEMS){
+    const b=document.createElement('button');b.type='button';b.className='shopItem';
+    const iconUrl=`./icons/item_${item.id}.png`;
+    b.innerHTML=`
+      <div class="itemIcon" style="background-image: url('${iconUrl}')"></div>
+      <div class="itemDetails">
+        <strong>${item.name}</strong>
+        <span>${item.desc}</span>
+        <em>${item.cost} G</em>
+      </div>
+    `;
+    b.onclick=()=>buyItem(item);box.appendChild(b);
+  }
 
-  if(rbox){rbox.replaceChildren();
-    for(const r of RECIPES){const can=canCombine(r);const b=document.createElement('button');
+  if(rbox){
+    rbox.replaceChildren();
+    for(const r of RECIPES){
+      const can=canCombine(r);const b=document.createElement('button');
       b.type='button';b.className='shopItem recipe'+(can?' canCraft':'');
+      const iconUrl=`./icons/item_${r.id}.png`;
       const mats=r.mats.map(id=>{const x=ITEMS.find(i=>i.id===id)||RECIPES.find(i=>i.id===id);return x?x.name:id}).join(' + ');
-      b.innerHTML=`<strong>${r.name} <small>[T${r.tier}]</small></strong><span>${r.desc}</span><small class="mats">${mats}${r.extra>0?' +'+r.extra+'G':''}</small>`;
-      b.onclick=()=>{if(can)doCombine(r);else notify('재료 부족!')};rbox.appendChild(b)}}
+      b.innerHTML=`
+        <div class="itemIcon" style="background-image: url('${iconUrl}')"></div>
+        <div class="itemDetails">
+          <strong>${r.name} <small>[T${r.tier}]</small></strong>
+          <span>${r.desc}</span>
+          <small class="mats">${mats}${r.extra>0?' +'+r.extra+'G':''}</small>
+        </div>
+      `;
+      b.onclick=()=>{if(can)doCombine(r);else notify('재료 부족!')};
+      rbox.appendChild(b);
+    }
+  }
 
   if(inv){
     inv.replaceChildren();
@@ -1211,14 +1240,26 @@ function renderShop(){
       const b=document.createElement('button');b.type='button';
       const isSel=(i===selectedInvIndex);
       b.className='invItem'+(isSel?' selected':'');
+      const iconUrl=`./icons/item_${it.id}.png`;
       const tierColor=it.tier===3?'#ff9944':it.tier===2?'#66bbff':'#ccc';
-      b.innerHTML=`<strong style="color:${tierColor}">${it.name} <small>[T${it.tier}]</small></strong><small>${it.desc}</small><small class="sell">클릭하여 선택 (판매가: ${Math.floor((it.cost||0)*.5)}G)</small>`;
+      b.innerHTML=`
+        <div class="itemIcon" style="background-image: url('${iconUrl}')"></div>
+        <div class="itemDetails">
+          <strong style="color:${tierColor}">${it.name} <small>[T${it.tier}]</small></strong>
+          <small>${it.desc}</small>
+          <small class="sell">판매가: ${Math.floor((it.cost||0)*.5)}G</small>
+        </div>
+      `;
       b.onclick=()=>{selectedInvIndex=i;renderShop()};
       inv.appendChild(b);
     });
     for(let i=inventory.length;i<8;i++){
       const b=document.createElement('button');b.type='button';b.className='invItem empty';b.disabled=true;
-      b.innerHTML='<strong>빈 슬롯</strong>';inv.appendChild(b);
+      b.innerHTML=`
+        <div class="itemIcon" style="background: rgba(0,0,0,0.3); border-style: dashed; border-color: #334e68;"></div>
+        <div class="itemDetails"><strong>빈 슬롯</strong></div>
+      `;
+      inv.appendChild(b);
     }
 
     /* CONFIRM SELL PANEL */
@@ -1228,6 +1269,7 @@ function renderShop(){
       const confBox=document.createElement('div');
       confBox.className='sellConfirmBox';
       confBox.innerHTML=`
+        <div class="itemIcon big" style="background-image: url('./icons/item_${item.id}.png')"></div>
         <div class="sellConfirmInfo">
           <strong>${item.name} [Tier ${item.tier}]</strong>
           <span>${item.desc}</span>
@@ -1254,14 +1296,23 @@ function renderSkillUp(){
   for(const key of SK){
     const sk=HEROES[hero.type].skills[key],lv=hero.skillLevels[key],mx=sk.ulti?3:4;
     const can=lv<mx&&(!sk.ulti||hero.level>=6)&&hero.skillPoints>0;
+    const iconUrl=`./icons/skill_${hero.type}_${key}.png`;
     const b=document.createElement('button');b.type='button';
     b.className='skillChoice'+(can?' available':'');b.disabled=!can;
-    b.innerHTML=`<div class="sk-key-big">${'1234'['QWER'.indexOf(key)]}</div><strong>${sk.name}</strong><small>${sk.desc}</small><span>Lv ${lv} / ${mx}</span>`;
+    b.innerHTML=`
+      <div class="skChoiceIcon" style="background-image: url('${iconUrl}')">
+        <div class="sk-key-big">${'1234'['QWER'.indexOf(key)]}</div>
+      </div>
+      <strong>${sk.name}</strong>
+      <small>${sk.desc}</small>
+      <span>Lv ${lv} / ${mx}</span>
+    `;
     b.onclick=()=>{if(!can)return;hero.skillLevels[key]++;hero.skillPoints--;
       if(sk.type==='passive')recalcStats();
       if(sk.type==='revive'&&hero.skillLevels[key]>0)hero.hasRevive=true;
       if(hero.skillPoints<=0){closeSkillUp()}else renderSkillUp();syncHud()};
-    box.appendChild(b)}
+    box.appendChild(b);
+  }
 }
 
 function setShopTab(tab){
