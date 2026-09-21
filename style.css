@@ -133,6 +133,7 @@ body { touch-action: none; user-select: none; -webkit-user-select: none; }
   box-shadow: inset 1px 1px 0 #ca8a04, inset -1px -1px 0 #180e07, 0 4px 8px rgba(0, 0, 0, 0.6);
   display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
   cursor: pointer; overflow: hidden;
+  image-rendering: pixelated;
   transition: transform 0.08s, border-color 0.1s, filter 0.12s;
 }
 .skillSlot:hover {
@@ -365,6 +366,7 @@ body { touch-action: none; user-select: none; -webkit-user-select: none; }
   border: 2px solid #5a4225;
   box-shadow: inset 1px 1px 0 #ca8a04, 0 3px 6px rgba(0, 0, 0, 0.6);
   position: relative; margin-bottom: 4px;
+  image-rendering: pixelated;
 }
 .sk-key-big {
   font: 900 12px monospace; color: var(--px-gold);
@@ -402,7 +404,26 @@ body { touch-action: none; user-select: none; -webkit-user-select: none; }
 
 .shopItems {
   display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 6px; margin: 8px 0; max-height: 52vh; overflow-y: auto;
+  gap: 6px; margin: 8px 0; max-height: 52vh;
+  overflow-x: hidden; overflow-y: auto;
+}
+.shopItems::-webkit-scrollbar {
+  width: 6px;
+}
+.shopItems::-webkit-scrollbar:horizontal {
+  display: none; height: 0;
+}
+.shopItems::-webkit-scrollbar-track {
+  background: #060b11;
+  border-radius: 3px;
+}
+.shopItems::-webkit-scrollbar-thumb {
+  background: #233548;
+  border-radius: 3px;
+  border: 1px solid #334e68;
+}
+.shopItems::-webkit-scrollbar-thumb:hover {
+  background: #ca8a04;
 }
 
 /* ─── RETRO PIXEL ITEM ICONS ─── */
@@ -412,6 +433,7 @@ body { touch-action: none; user-select: none; -webkit-user-select: none; }
   border: 2px solid #5a4225;
   box-shadow: inset 1px 1px 0 #ca8a04, inset -1px -1px 0 #180e07, 0 2px 5px rgba(0, 0, 0, 0.5);
   flex-shrink: 0;
+  image-rendering: pixelated;
 }
 .itemDetails {
   display: flex; flex-direction: column; gap: 2px;
@@ -420,6 +442,7 @@ body { touch-action: none; user-select: none; -webkit-user-select: none; }
 
 .shopItem {
   min-height: 64px !important; padding: 6px 8px !important;
+  min-width: 0 !important;
   background: #09131d !important; border: 2px solid #233548 !important;
   box-shadow: inset 1px 1px 0 #3b5066, inset -1px -1px 0 #050a0f !important;
   display: flex !important; flex-direction: row !important; align-items: center !important; gap: 8px !important;
@@ -627,4 +650,160 @@ body { touch-action: none; user-select: none; -webkit-user-select: none; }
   border-color: #ef4444 !important;
   color: #fff !important;
   box-shadow: inset 1px 1px 0 #fca5a5 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MODERN COMMERCIAL GAME STYLING: OVERHEAD BARS & FLOATING JOYSTICK
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── DYNAMIC FLOATING JOYSTICK ─── */
+.touchJoystick {
+  position: fixed;
+  width: 90px; height: 90px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.42) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.12), inset 0 0 10px rgba(255, 255, 255, 0.05) !important;
+  display: none;
+  z-index: 100;
+  pointer-events: none;
+}
+.joystickKnob {
+  position: absolute;
+  top: calc(50% - 20px); left: calc(50% - 20px);
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.72) !important;
+  border: 2px solid rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.8), inset 0 0 6px rgba(255, 255, 255, 0.9) !important;
+  pointer-events: none;
+  transition: transform 0.03s ease-out;
+}
+
+/* ─── OVERHEAD HEALTH BARS (HERO & WORLD TREE) ─── */
+.overheadBar {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: flex; flex-direction: column; align-items: center;
+  pointer-events: none; z-index: 30;
+  transition: opacity 0.15s;
+}
+
+/* Hero Overhead Bar */
+.heroOverhead {
+  width: 76px; gap: 2px;
+}
+.heroOverhead .ovhTrack {
+  width: 100%; height: 7px;
+  background: rgba(10, 15, 26, 0.88);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
+  position: relative; overflow: hidden;
+}
+.heroOverhead .ovhHpFill {
+  height: 100%; background: linear-gradient(90deg, #059669, #10b981, #34d399);
+  border-radius: 3px; transition: width 0.08s ease-out;
+}
+.heroOverhead .ovhShieldFill {
+  position: absolute; top: 0; left: 0; height: 100%;
+  background: linear-gradient(90deg, #0284c7, #38bdf8);
+  opacity: 0.88; border-radius: 3px; transition: width 0.08s;
+}
+.heroOverhead .ovhHpText {
+  font: 800 9px monospace; color: #ffffff;
+  text-shadow: 0 1px 2px #000, 0 0 4px #000;
+  margin-top: -1px;
+}
+.heroOverhead .ovhLevel {
+  font: 900 8px monospace; color: #fde047;
+  background: rgba(0, 0, 0, 0.8); padding: 0 4px; border-radius: 3px;
+  border: 1px solid rgba(250, 204, 21, 0.6);
+  margin-bottom: 1px;
+}
+
+/* World Tree Overhead Bar */
+.towerOverhead {
+  width: 136px; gap: 3px;
+}
+.towerOverhead .ovhTowerBadge {
+  font: 900 11px 'Pretendard', sans-serif; color: #6ee7b7;
+  text-shadow: 0 0 8px rgba(16, 185, 129, 0.8), 0 1px 2px #000;
+  letter-spacing: 0.5px;
+}
+.towerOverhead .ovhTrack {
+  width: 100%; height: 9px;
+  background: rgba(10, 15, 26, 0.92);
+  border-radius: 5px;
+  border: 1.5px solid rgba(52, 211, 153, 0.7);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.45), 0 2px 8px rgba(0, 0, 0, 0.9);
+  position: relative; overflow: hidden;
+}
+.towerOverhead .ovhHpFill.tower {
+  height: 100%; background: linear-gradient(90deg, #059669, #10b981, #34d399);
+  border-radius: 4px; transition: width 0.1s ease-out;
+}
+.towerOverhead .ovhShieldFill {
+  position: absolute; top: 0; left: 0; height: 100%;
+  background: linear-gradient(90deg, #0284c7, #38bdf8);
+  opacity: 0.88; border-radius: 4px; transition: width 0.1s;
+}
+.towerOverhead .ovhHpText {
+  font: 800 10px monospace; color: #f1f5f9;
+  text-shadow: 0 1px 3px #000, 0 0 4px #000;
+}
+
+/* ─── MODERN COMMERCIAL GLASSMORPHISM HUD & CARDS ─── */
+.hudBox.left {
+  background: rgba(15, 23, 42, 0.78) !important;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+}
+.hudAction {
+  background: rgba(15, 23, 42, 0.82) !important;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+.hudAction:hover {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4) !important;
+}
+
+#skillBar {
+  background: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 16px !important;
+  padding: 6px 10px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+}
+.skillSlot {
+  border-radius: 10px !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5) !important;
+}
+.skillSlot:hover {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.45) !important;
+}
+.skillSlot.ulti {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4) !important;
+}
+
+.card {
+  border-radius: 16px !important;
+  background: rgba(15, 23, 42, 0.94) !important;
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8) !important;
+}
+.card button {
+  border-radius: 8px !important;
 }
