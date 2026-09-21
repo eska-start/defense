@@ -2139,7 +2139,7 @@ function updateAnimations(dt){
         window.heroHpBarEl = el;
       }
       const hBar = window.heroHpBarEl;
-      if (hero.dead || state !== 'play') {
+      if (hero.dead || (state !== 'play' && state !== 'lobby')) {
         hBar.style.display = 'none';
       } else {
         hBar.style.display = 'flex';
@@ -2203,7 +2203,6 @@ function update(dt){
   if(state==='lobby'){
     move(dt);
     updateAnimations(dt);
-    updateOverheadBars();
     if(typeof NetworkManager!=='undefined')NetworkManager.update(dt);
     return;
   }
@@ -2782,28 +2781,20 @@ const NetworkManager = {
     let code = '';
     for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
     this.roomCode = code;
-    const fullPeerId = 'lumia-v2-' + code.toLowerCase();
+    const fullPeerId = 'lg_room_' + code.toLowerCase();
 
     try {
       if (typeof Peer === 'undefined') {
         if (onError) onError('PeerJS 라이브러리를 불러오지 못했습니다.');
         return;
       }
-      this.peer = new Peer(fullPeerId, {
-        debug: 1,
-        config: {
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' }
-          ]
-        }
-      });
+      this.peer = new Peer(fullPeerId, { debug: 1 });
 
       this.peer.on('open', (id) => {
         this.myId = id;
         this.players.set(this.myId, {
           id: this.myId,
-          name: this.myName,
+          name: this.myName + ' (방장)',
           heroType: (typeof hero !== 'undefined' && hero.type) ? hero.type : 'warrior',
           isHost: true,
           hp: 500,
@@ -2814,13 +2805,19 @@ const NetworkManager = {
       });
 
       this.peer.on('connection', (conn) => {
+        // 즉시 데이터 리스너 등록 (핸드셰이크 중 패킷 유실 방지)
+        this.connections.set(conn.peer, conn);
+        conn.on('data', (data) => this.handleData(conn.peer, data));
+        conn.on('close', () => this.handleDisconnect(conn.peer));
+        conn.on('error', () => this.handleDisconnect(conn.peer));
         conn.on('open', () => {
           this.connections.set(conn.peer, conn);
-          conn.on('data', (data) => this.handleData(conn.peer, data));
-          conn.on('close', () => this.handleDisconnect(conn.peer));
-          conn.on('error', () => this.handleDisconnect(conn.peer));
           this.broadcastLobbyState();
         });
+        // 만약 이미 open 상태라면 바로 브로드캐스트
+        if (conn.open) {
+          this.broadcastLobbyState();
+        }
       });
 
       this.peer.on('error', (err) => {
@@ -2842,38 +2839,38 @@ const NetworkManager = {
     gameMode = 'multi_client';
     this.disconnect();
 
-    const cleanCode = (inputCode || '').trim().replace(/^lumia-v2-/i, '').replace(/^lumia-/i, '').toUpperCase();
+    const cleanCode = (inputCode || '').trim().replace(/^lg_room_/i, '').replace(/^lumia-v2-/i, '').replace(/^lumia-/i, '').toUpperCase();
     if (!cleanCode || cleanCode.length < 3) {
       if (onError) onError('올바른 초대 코드를 입력해주세요.');
       return;
     }
     this.roomCode = cleanCode;
-    const hostPeerId = 'lumia-v2-' + cleanCode.toLowerCase();
+    const hostPeerId = 'lg_room_' + cleanCode.toLowerCase();
 
     try {
       if (typeof Peer === 'undefined') {
         if (onError) onError('PeerJS 라이브러리를 불러오지 못했습니다.');
         return;
       }
-      this.peer = new Peer(null, {
-        debug: 1,
-        config: {
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' }
-          ]
-        }
-      });
+      this.peer = new Peer(null, { debug: 1 });
 
       let connTimeout = setTimeout(() => {
         if (onError) onError('방을 찾을 수 없습니다. 코드를 확인해주세요.');
         this.disconnect();
-      }, 8000);
+      }, 10000);
 
       this.peer.on('open', (id) => {
         this.myId = id;
         const conn = this.peer.connect(hostPeerId, { reliable: true });
         this.hostConn = conn;
+
+        // 즉시 데이터 수신 리스너 등록
+        conn.on('data', (data) => this.handleData('host', data));
+        conn.on('close', () => this.handleDisconnect('host'));
+        conn.on('error', (err) => {
+          clearTimeout(connTimeout);
+          if (onError) onError('연결 실패: ' + (err.message || '방이 없거나 만료되었습니다.'));
+        });
 
         conn.on('open', () => {
           clearTimeout(connTimeout);
@@ -2884,16 +2881,7 @@ const NetworkManager = {
             heroType: (typeof hero !== 'undefined' && hero.type) ? hero.type : 'warrior'
           }));
 
-          conn.on('data', (data) => this.handleData('host', data));
-          conn.on('close', () => this.handleDisconnect('host'));
-          conn.on('error', () => this.handleDisconnect('host'));
-
           if (onSuccess) onSuccess(this.roomCode);
-        });
-
-        conn.on('error', (err) => {
-          clearTimeout(connTimeout);
-          if (onError) onError('연결 실패: ' + (err.message || '방이 없거나 만료되었습니다.'));
         });
       });
 
@@ -3035,6 +3023,9 @@ const NetworkManager = {
         this.players.clear();
         (msg.players || []).forEach(p => this.players.set(p.id, p));
         this.updateLobbyUI();
+        if (!$('heroSelect').classList.contains('hidden')) {
+          buildHeroSelect();
+        }
         break;
       }
       case 'SELECT_HERO': {
@@ -3044,6 +3035,9 @@ const NetworkManager = {
           if (this.isHost) this.broadcastLobbyState();
           else this.updateLobbyUI();
           this.rebuildRemoteHero(msg.sender, msg.heroType);
+          if (!$('heroSelect').classList.contains('hidden')) {
+            buildHeroSelect();
+          }
         }
         break;
       }
@@ -3334,17 +3328,40 @@ const NetworkManager = {
 /* ═══ HERO SELECT ═══ */
 function buildHeroSelect(){
   const box=$('heroChoices');if(!box)return;box.replaceChildren();
+
+  // 이미 다른 파티원이 선택한 영웅 타입 및 선택자 이름 수집
+  const takenHeroes = new Map();
+  if (gameMode !== 'solo' && typeof NetworkManager !== 'undefined' && NetworkManager.players) {
+    NetworkManager.players.forEach((p, peerId) => {
+      if (peerId !== NetworkManager.myId && p.heroType) {
+        takenHeroes.set(p.heroType, p.name || '파티원');
+      }
+    });
+  }
+
   for(const[key,h]of Object.entries(HEROES)){
     const sheetUrl = HERO_SHEETS[key] || '';
-    const b=document.createElement('button');b.type='button';b.className='heroChoice';
+    const b=document.createElement('button');b.type='button';
+    const isTaken = takenHeroes.has(key);
+    b.className='heroChoice' + (isTaken ? ' taken' : '');
     const skList=Object.entries(h.skills).map(([k,s])=>`<b>${'1234'['QWER'.indexOf(k)]}</b> ${s.name}`).join(' · ');
+    
+    const takenBadge = isTaken ? `<div class="heroTakenBadge">🔒 ${takenHeroes.get(key)} 선택 중</div>` : '';
+
     b.innerHTML=`
       <div class="heroPortrait" style="background-image: url('${sheetUrl}')"></div>
       <b style="color:#${h.color.toString(16).padStart(6,'0')}">${h.name}</b>
       <small>${h.desc}</small>
       <small class="sk-list">${skList}</small>
+      ${takenBadge}
     `;
-    b.onclick=()=>onHeroChosen(key);box.appendChild(b);
+    if (isTaken) {
+      b.disabled = true;
+      b.title = '다른 파티원이 이미 선택한 영웅입니다.';
+    } else {
+      b.onclick=()=>onHeroChosen(key);
+    }
+    box.appendChild(b);
   }
 }
 
@@ -3365,6 +3382,9 @@ function enterLobby(type){
   state='lobby';
   show('lobbyHud');
   if(typeof NetworkManager!=='undefined'){
+    if (NetworkManager.players && NetworkManager.players.has(NetworkManager.myId)) {
+      NetworkManager.players.get(NetworkManager.myId).heroType = type;
+    }
     NetworkManager.sendHeroSelection(type);
     NetworkManager.updateLobbyUI();
   }
