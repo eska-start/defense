@@ -3307,6 +3307,7 @@ const NetworkManager = {
           z: Number(hero.pos.z.toFixed(2)),
           rotY: Number(hero.obj.rotation.y.toFixed(2)),
           animState: hero.anim ? hero.anim.state : 'idle',
+          lastDirX: hero.lastDirX || 1,
           hp: Math.ceil(hero.hp),
           maxHp: Math.ceil(hero.maxHp)
         });
@@ -3348,6 +3349,8 @@ const NetworkManager = {
     r.targetPos.set(data.x, 0, data.z);
     r.targetRotY = data.rotY;
     r.targetAnimState = data.animState;
+    // 이동 방향 저장 (스프라이트 좌우 플립용)
+    if (typeof data.lastDirX !== 'undefined') r.lastDirX = data.lastDirX;
     r.hp = data.hp;
     r.maxHp = data.maxHp;
     if (r.hpFillEl) {
@@ -3532,8 +3535,16 @@ const NetworkManager = {
         let rowY = 2 / 3;
         if (a.state === 'walk') rowY = 1 / 3;
         else if (a.state === 'attack') rowY = 0.0;
-        // 방향 플립 (facing.x 기반)
-        const isLeft = (a.facing.x < 0);
+
+        // 방향 플립:
+        //  - 공격 중: facing.x (공격 패킷의 방향)
+        //  - 이동/대기: r.lastDirX (PLAYER_TRANSFORM의 이동 방향, -1=왼쪽 1=오른쪽)
+        let isLeft;
+        if (a.state === 'attack' && (a.attackTimer > 0 || (a.skillMotion && a.skillMotion.timer > 0))) {
+          isLeft = (a.facing.x < 0);
+        } else {
+          isLeft = ((r.lastDirX || 1) < 0);
+        }
         if (isLeft) {
           r.tex.repeat.set(-0.25, 1 / 3);
           r.tex.offset.set((a.frame + 1) * 0.25, rowY);
