@@ -2705,34 +2705,17 @@ if (joystickEl && knobEl) {
     joystickActive = false;
     touchId = null;
     joystickEl.style.display = 'none';
->>>>>>> c6a2ee7 (feat: 현대적 모바일 UI 개편, 영웅/세계수 머리 위 체력바 신설, 동적 플로팅 가상 조이스틱 구현 및 신규 아이템 아이콘 추가)
     knobEl.style.transform = 'translate(0px, 0px)';
     touchDir.x = 0;
     touchDir.z = 0;
   }
 
-<<<<<<< HEAD
+  // Floating joystick appears on touch in gameplay area
   window.addEventListener('touchstart', e => {
-    if (joystickActive || !e.changedTouches.length) return;
-    const t = e.changedTouches[0];
-
-    // 게임 플레이 중 빈 화면 어디든 터치하면 이동 시작
-    if (!isGameplayTouch(e.target)) return;
-
-    e.preventDefault();
-    touchId = t.identifier;
-    joystickActive = true;
-    originX = t.clientX;
-    originY = t.clientY;
-    placeJoystick(originX, originY);
-    joyRect = joystickEl.getBoundingClientRect();
-    updateJoystick(t.clientX, t.clientY);
-=======
-  // Floating joystick appears anywhere on left 65% of screen on touch
-  window.addEventListener('touchstart', e => {
-    if (state !== 'play' || joystickActive) return;
+    if (state !== 'play' || joystickActive || !e.changedTouches.length) return;
     for (let i = 0; i < e.changedTouches.length; i++) {
       const t = e.changedTouches[i];
+      if (!isGameplayTouch(e.target)) continue;
       if (t.clientX < window.innerWidth * 0.65 && t.clientY > 65) {
         touchId = t.identifier;
         joystickActive = true;
@@ -2740,7 +2723,6 @@ if (joystickEl && knobEl) {
         break;
       }
     }
->>>>>>> c6a2ee7 (feat: 현대적 모바일 UI 개편, 영웅/세계수 머리 위 체력바 신설, 동적 플로팅 가상 조이스틱 구현 및 신규 아이템 아이콘 추가)
   }, { passive: false });
 
   window.addEventListener('touchmove', e => {
@@ -2764,29 +2746,18 @@ if (joystickEl && knobEl) {
     }
   }, { passive: false });
 
-<<<<<<< HEAD
   window.addEventListener('touchcancel', resetJoystick, { passive: true });
 
-  // Mouse fallback for desktop testing
-  let isMouseDown = false;
-  joystickEl.addEventListener('mousedown', e => {
-    isMouseDown = true;
-    originX = e.clientX;
-    originY = e.clientY;
-    placeJoystick(originX, originY);
-    updateJoystick(e.clientX, e.clientY);
-=======
   // Desktop mouse support for testing floating joystick
   let isMouseDown = false;
   window.addEventListener('mousedown', e => {
     if (state !== 'play' || isMouseDown) return;
-    if (e.target.closest('#hud') || e.target.closest('#skillBar') || e.target.closest('.overlay')) return;
+    if (!isGameplayTouch(e.target)) return;
     if (e.clientX < window.innerWidth * 0.6 && e.clientY > 65) {
       isMouseDown = true;
       joystickActive = true;
       showJoystickAt(e.clientX, e.clientY);
     }
->>>>>>> c6a2ee7 (feat: 현대적 모바일 UI 개편, 영웅/세계수 머리 위 체력바 신설, 동적 플로팅 가상 조이스틱 구현 및 신규 아이템 아이콘 추가)
   });
   window.addEventListener('mousemove', e => {
     if (isMouseDown) updateJoystick(e.clientX, e.clientY);
