@@ -8,7 +8,7 @@
 const $=id=>document.getElementById(id);
 const show=id=>$(id)?.classList.remove('hidden');
 const hide=id=>$(id)?.classList.add('hidden');
-const hideAll=()=>['start','heroSelect','skillUp','shop','soundModal','pause','gameover','victory','deadOverlay'].forEach(hide);
+const hideAll=()=>['start','heroSelect','skillUp','shop','soundModal','pause','gameover','victory','deadOverlay','lobbyHud','joinModal'].forEach(hide);
 
 /* ─── CONFIG ─── */
 const MAX_WAVE=30,MAP_H=15,TWR_RNG=6.5,TWR_DMG=25,TWR_RATE=1.0,RESPAWN=6;
@@ -1024,9 +1024,12 @@ function spawnEnemy(){
   const isElite=wave>=25&&kind!=='boss'&&Math.random()<.3;
   if(isElite){wM*=1.8;dM*=1.5}
   const side=curSides[spawned%curSides.length],g=GATES[side];
+  const pCount = (typeof NetworkManager !== 'undefined') ? NetworkManager.getPlayerCount() : 1;
+  const hpMult = 1 + (pCount - 1) * 0.85;
+  const goldMult = 1 + (pCount - 1) * 0.60;
   const e={kind,pos:new THREE.Vector3(g.x+(Math.random()-.5)*2,0,g.z+(Math.random()-.5)*2),
-    hp:d.hp*wM,maxHp:d.hp*wM,speed:d.spd*(1+wave*.008),dmg:d.dmg*dM,
-    gold:Math.round(d.gold*(1+wave*.04)*(isElite?1.5:1)),xp:Math.round(d.xp*(1+wave*.03)*(isElite?1.3:1)),
+    hp:d.hp*wM*hpMult,maxHp:d.hp*wM*hpMult,speed:d.spd*(1+wave*.008),dmg:d.dmg*dM,
+    gold:Math.round(d.gold*(1+wave*.04)*(isElite?1.5:1)*goldMult),xp:Math.round(d.xp*(1+wave*.03)*(isElite?1.3:1)),
     h:d.h,color:isElite?0xff6600:d.color,dead:false,stunTimer:0,slowTimer:0,slowAmt:0,
     poisonTimer:0,poisonDmg:0,tauntTimer:0,obj:null,anim:null,hpBarEl:null,
     isElite:isElite,bob:Math.random()*Math.PI*2};
@@ -2194,7 +2197,19 @@ function updateAnimations(dt){
 
 /* ═══ UPDATE ═══ */
 function update(dt){
+  if(state==='pause'||state==='menu')return;
+
+  // 대기실 광장 상태: 영웅 자유 이동, 3D 애니메이션, 오버헤드 체력바, 네트워크 동기화
+  if(state==='lobby'){
+    move(dt);
+    updateAnimations(dt);
+    updateOverheadBars();
+    if(typeof NetworkManager!=='undefined')NetworkManager.update(dt);
+    return;
+  }
+
   if(state!=='play')return;
+  if(typeof NetworkManager!=='undefined')NetworkManager.update(dt);
 
   hero.atkTimer=Math.max(0,hero.atkTimer-dt);
   tower.atkTimer=Math.max(0,tower.atkTimer-dt);
@@ -2727,6 +2742,595 @@ function closeShop(){if(state!=='shop')return;state='play';selectedInvIndex=-1;h
 function openSkillUp(){if(state!=='play'||hero.skillPoints<=0)return;state='skillUp';show('skillUp');renderSkillUp()}
 function closeSkillUp(){if(state!=='skillUp')return;state='play';hide('skillUp')}
 
+/* ═══════════════════════════════════════════════════════════
+   MULTIPLAYER NETWORK MANAGER (PeerJS WebRTC DataChannel)
+   ═══════════════════════════════════════════════════════════ */
+let gameMode = 'solo'; // 'solo' | 'multi_host' | 'multi_client'
+
+const NetworkManager = {
+  peer: null,
+  isHost: false,
+  roomCode: '',
+  myId: '',
+  myName: '용사',
+  connections: new Map(),
+  hostConn: null,
+  players: new Map(),
+  remoteObjects: new Map(),
+  syncTimer: 0,
+  syncInterval: 0.05,
+
+  init() {
+    if (!this.myName || this.myName === '용사') {
+      const randTag = Math.floor(1000 + Math.random() * 9000);
+      this.myName = '용사#' + randTag;
+    }
+  },
+
+  getPlayerCount() {
+    if (gameMode === 'solo') return 1;
+    return Math.max(1, this.players.size);
+  },
+
+  createRoom(onSuccess, onError) {
+    this.init();
+    this.isHost = true;
+    gameMode = 'multi_host';
+    this.disconnect();
+
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let code = '';
+    for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    this.roomCode = code;
+    const fullPeerId = 'lumia-v2-' + code.toLowerCase();
+
+    try {
+      if (typeof Peer === 'undefined') {
+        if (onError) onError('PeerJS 라이브러리를 불러오지 못했습니다.');
+        return;
+      }
+      this.peer = new Peer(fullPeerId, {
+        debug: 1,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+          ]
+        }
+      });
+
+      this.peer.on('open', (id) => {
+        this.myId = id;
+        this.players.set(this.myId, {
+          id: this.myId,
+          name: this.myName,
+          heroType: (typeof hero !== 'undefined' && hero.type) ? hero.type : 'warrior',
+          isHost: true,
+          hp: 500,
+          maxHp: 500
+        });
+        this.updateLobbyUI();
+        if (onSuccess) onSuccess(this.roomCode);
+      });
+
+      this.peer.on('connection', (conn) => {
+        conn.on('open', () => {
+          this.connections.set(conn.peer, conn);
+          conn.on('data', (data) => this.handleData(conn.peer, data));
+          conn.on('close', () => this.handleDisconnect(conn.peer));
+          conn.on('error', () => this.handleDisconnect(conn.peer));
+          this.broadcastLobbyState();
+        });
+      });
+
+      this.peer.on('error', (err) => {
+        console.warn('Peer error:', err);
+        if (err.type === 'unavailable-id') {
+          setTimeout(() => this.createRoom(onSuccess, onError), 300);
+        } else if (onError) {
+          onError(err.message || '방 생성 오류');
+        }
+      });
+    } catch (e) {
+      if (onError) onError(e.message || '방 생성 실패');
+    }
+  },
+
+  joinRoom(inputCode, onSuccess, onError) {
+    this.init();
+    this.isHost = false;
+    gameMode = 'multi_client';
+    this.disconnect();
+
+    const cleanCode = (inputCode || '').trim().replace(/^lumia-v2-/i, '').replace(/^lumia-/i, '').toUpperCase();
+    if (!cleanCode || cleanCode.length < 3) {
+      if (onError) onError('올바른 초대 코드를 입력해주세요.');
+      return;
+    }
+    this.roomCode = cleanCode;
+    const hostPeerId = 'lumia-v2-' + cleanCode.toLowerCase();
+
+    try {
+      if (typeof Peer === 'undefined') {
+        if (onError) onError('PeerJS 라이브러리를 불러오지 못했습니다.');
+        return;
+      }
+      this.peer = new Peer(null, {
+        debug: 1,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+          ]
+        }
+      });
+
+      let connTimeout = setTimeout(() => {
+        if (onError) onError('방을 찾을 수 없습니다. 코드를 확인해주세요.');
+        this.disconnect();
+      }, 8000);
+
+      this.peer.on('open', (id) => {
+        this.myId = id;
+        const conn = this.peer.connect(hostPeerId, { reliable: true });
+        this.hostConn = conn;
+
+        conn.on('open', () => {
+          clearTimeout(connTimeout);
+          conn.send(JSON.stringify({
+            type: 'JOIN_REQUEST',
+            sender: this.myId,
+            name: this.myName,
+            heroType: (typeof hero !== 'undefined' && hero.type) ? hero.type : 'warrior'
+          }));
+
+          conn.on('data', (data) => this.handleData('host', data));
+          conn.on('close', () => this.handleDisconnect('host'));
+          conn.on('error', () => this.handleDisconnect('host'));
+
+          if (onSuccess) onSuccess(this.roomCode);
+        });
+
+        conn.on('error', (err) => {
+          clearTimeout(connTimeout);
+          if (onError) onError('연결 실패: ' + (err.message || '방이 없거나 만료되었습니다.'));
+        });
+      });
+
+      this.peer.on('error', (err) => {
+        clearTimeout(connTimeout);
+        if (onError) onError('네트워크 오류: ' + (err.message || ''));
+      });
+    } catch (e) {
+      if (onError) onError(e.message || '연결 시도 실패');
+    }
+  },
+
+  disconnect() {
+    if (this.peer) {
+      try { this.peer.destroy(); } catch (e) {}
+      this.peer = null;
+    }
+    this.connections.clear();
+    this.hostConn = null;
+    this.players.clear();
+    this.clearRemoteObjects();
+  },
+
+  clearRemoteObjects() {
+    this.remoteObjects.forEach(r => {
+      if (r.obj) scene.remove(r.obj);
+      if (r.overheadEl) r.overheadEl.remove();
+    });
+    this.remoteObjects.clear();
+  },
+
+  broadcast(data) {
+    const json = typeof data === 'string' ? data : JSON.stringify(data);
+    this.connections.forEach(conn => {
+      if (conn && conn.open) conn.send(json);
+    });
+  },
+
+  send(data) {
+    const json = typeof data === 'string' ? data : JSON.stringify(data);
+    if (this.isHost) {
+      this.broadcast(data);
+    } else if (this.hostConn && this.hostConn.open) {
+      this.hostConn.send(json);
+    }
+  },
+
+  broadcastLobbyState() {
+    if (!this.isHost) return;
+    const playerList = Array.from(this.players.values());
+    this.broadcast({
+      type: 'LOBBY_STATE',
+      players: playerList,
+      roomCode: this.roomCode
+    });
+    this.updateLobbyUI();
+  },
+
+  updateLobbyUI() {
+    const codeEl = $('lobbyRoomCode');
+    if (codeEl) codeEl.textContent = this.roomCode || '----';
+
+    const countEl = $('lobbyPlayerCount');
+    if (countEl) countEl.textContent = this.players.size || 1;
+
+    const listEl = $('lobbyPlayerList');
+    if (listEl) {
+      listEl.replaceChildren();
+      this.players.forEach(p => {
+        const tag = document.createElement('span');
+        tag.className = 'lobbyPlayerTag' + (p.isHost ? ' host' : '') + (p.id === this.myId ? ' me' : '');
+        const hName = HEROES[p.heroType]?.name || p.heroType || '용사';
+        tag.textContent = (p.isHost ? '👑 ' : '⚔️ ') + (p.name || '용사') + ` (${hName})`;
+        listEl.appendChild(tag);
+      });
+    }
+
+    const startBtn = $('lobbyStartBtn');
+    const waitText = $('lobbyWaitText');
+    if (this.isHost) {
+      if (startBtn) startBtn.classList.remove('hidden');
+      if (waitText) waitText.classList.add('hidden');
+    } else {
+      if (startBtn) startBtn.classList.add('hidden');
+      if (waitText) waitText.classList.remove('hidden');
+    }
+  },
+
+  handleDisconnect(senderId) {
+    if (senderId === 'host') {
+      notify('⚠️ 방장과의 연결이 끊어졌습니다.');
+      setTimeout(() => {
+        hideAll();
+        show('start');
+        state = 'menu';
+      }, 1500);
+      return;
+    }
+    const p = this.players.get(senderId);
+    if (p) {
+      notify(`👋 ${p.name || '플레이어'} 퇴장`);
+      this.players.delete(senderId);
+    }
+    const r = this.remoteObjects.get(senderId);
+    if (r) {
+      if (r.obj) scene.remove(r.obj);
+      if (r.overheadEl) r.overheadEl.remove();
+      this.remoteObjects.delete(senderId);
+    }
+    this.connections.delete(senderId);
+    if (this.isHost) this.broadcastLobbyState();
+  },
+
+  handleData(sender, raw) {
+    let msg;
+    try {
+      msg = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    } catch (e) {
+      return;
+    }
+
+    switch (msg.type) {
+      case 'JOIN_REQUEST': {
+        if (!this.isHost) return;
+        this.players.set(msg.sender, {
+          id: msg.sender,
+          name: msg.name,
+          heroType: msg.heroType,
+          isHost: false,
+          hp: 500,
+          maxHp: 500
+        });
+        notify(`✨ ${msg.name} 님이 파티에 참여했습니다!`);
+        SoundManager.play('level_up');
+        this.broadcastLobbyState();
+        break;
+      }
+      case 'LOBBY_STATE': {
+        this.players.clear();
+        (msg.players || []).forEach(p => this.players.set(p.id, p));
+        this.updateLobbyUI();
+        break;
+      }
+      case 'SELECT_HERO': {
+        const p = this.players.get(msg.sender);
+        if (p) {
+          p.heroType = msg.heroType;
+          if (this.isHost) this.broadcastLobbyState();
+          else this.updateLobbyUI();
+          this.rebuildRemoteHero(msg.sender, msg.heroType);
+        }
+        break;
+      }
+      case 'PLAYER_TRANSFORM': {
+        if (msg.sender === this.myId) return;
+        this.updateRemotePlayerState(msg);
+        if (this.isHost) {
+          this.broadcast(msg);
+        }
+        break;
+      }
+      case 'START_GAME': {
+        this.executeStartGame();
+        break;
+      }
+      case 'SYNC_MONSTERS': {
+        if (!this.isHost) {
+          this.syncMonstersFromHost(msg.enemies);
+          if (typeof msg.towerHp !== 'undefined') {
+            tower.hp = msg.towerHp;
+            tower.maxHp = msg.towerMaxHp || tower.maxHp;
+          }
+          if (typeof msg.wave !== 'undefined') wave = msg.wave;
+          syncHud();
+        }
+        break;
+      }
+      case 'HIT_ENEMY': {
+        if (this.isHost) {
+          const target = enemies.find(e => e.id === msg.enemyId || (!e.dead && e.pos.distanceTo(new THREE.Vector3(msg.x, 0, msg.z)) < 1.6));
+          if (target && !target.dead) {
+            hitE(target, msg.dmg, msg.isCrit);
+          }
+        }
+        break;
+      }
+      case 'REMOTE_SKILL': {
+        if (msg.sender !== this.myId) {
+          this.renderRemoteSkill(msg);
+          if (this.isHost) this.broadcast(msg);
+        }
+        break;
+      }
+    }
+  },
+
+  sendHeroSelection(type) {
+    if (this.players.has(this.myId)) {
+      this.players.get(this.myId).heroType = type;
+    }
+    this.send({
+      type: 'SELECT_HERO',
+      sender: this.myId,
+      heroType: type
+    });
+    if (this.isHost) this.updateLobbyUI();
+  },
+
+  update(dt) {
+    if (gameMode === 'solo') return;
+    this.syncTimer += dt;
+    if (this.syncTimer >= this.syncInterval) {
+      this.syncTimer = 0;
+      if (hero && hero.obj) {
+        this.send({
+          type: 'PLAYER_TRANSFORM',
+          sender: this.myId,
+          name: this.myName,
+          heroType: hero.type,
+          x: Number(hero.pos.x.toFixed(2)),
+          z: Number(hero.pos.z.toFixed(2)),
+          rotY: Number(hero.obj.rotation.y.toFixed(2)),
+          animState: hero.anim ? hero.anim.state : 'idle',
+          hp: Math.ceil(hero.hp),
+          maxHp: Math.ceil(hero.maxHp)
+        });
+      }
+
+      if (this.isHost && state === 'play') {
+        const enemyData = enemies.slice(0, 40).map(e => ({
+          id: e.id || (e.id = Math.random().toString(36).substr(2, 9)),
+          kind: e.kind,
+          x: Number(e.pos.x.toFixed(2)),
+          z: Number(e.pos.z.toFixed(2)),
+          hp: Math.ceil(e.hp),
+          maxHp: Math.ceil(e.maxHp),
+          dead: e.dead
+        }));
+        this.broadcast({
+          type: 'SYNC_MONSTERS',
+          enemies: enemyData,
+          towerHp: Math.ceil(tower.hp),
+          towerMaxHp: tower.maxHp,
+          wave
+        });
+      }
+    }
+
+    this.updateRemoteObjects(dt);
+  },
+
+  updateRemotePlayerState(data) {
+    let r = this.remoteObjects.get(data.sender);
+    if (!r) {
+      r = this.createRemoteHeroObject(data.sender, data.heroType, data.name);
+    }
+    r.targetPos.set(data.x, 0, data.z);
+    r.targetRotY = data.rotY;
+    r.targetAnimState = data.animState;
+    r.hp = data.hp;
+    r.maxHp = data.maxHp;
+    if (r.hpFillEl) {
+      const pct = Math.max(0, Math.min(100, (data.hp / (data.maxHp || 1)) * 100));
+      r.hpFillEl.style.width = pct + '%';
+    }
+  },
+
+  createRemoteHeroObject(peerId, heroType, name) {
+    const g = new THREE.Group();
+    const d = HEROES[heroType] || HEROES.warrior;
+
+    const shadow = createDropShadow(0.68, 0.35);
+    g.add(shadow);
+
+    const auraGroup = new THREE.Group();
+    const auraInner = new THREE.Mesh(
+      new THREE.RingGeometry(0.3, 0.76, 32),
+      new THREE.MeshBasicMaterial({ color: d.color, transparent: true, opacity: 0.65, side: THREE.DoubleSide })
+    );
+    auraInner.rotation.x = -Math.PI / 2;
+    auraInner.position.y = 0.035;
+    auraGroup.add(auraInner);
+    g.add(auraGroup);
+
+    const tex = createHeroTexture(heroType);
+    const spriteMat = createChromaKeySpriteMaterial(tex);
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.scale.set(2.4, 2.4, 1.0);
+    sprite.position.y = 1.1;
+    g.add(sprite);
+
+    g.position.set(0, 0, 4);
+    scene.add(g);
+
+    const overheadEl = document.createElement('div');
+    overheadEl.className = 'remoteHeroOverhead';
+    overheadEl.innerHTML = `
+      <div class="remoteHeroName" style="border-color: #${d.color.toString(16).padStart(6, '0')}">${name || '동료 용사'}</div>
+      <div class="remoteHeroHpBar"><div class="remoteHeroHpFill"></div></div>
+    `;
+    const hpBarsContainer = $('hpBars');
+    if (hpBarsContainer) hpBarsContainer.appendChild(overheadEl);
+
+    const r = {
+      peerId,
+      heroType,
+      obj: g,
+      sprite,
+      auraGroup,
+      tex,
+      targetPos: new THREE.Vector3(0, 0, 4),
+      targetRotY: 0,
+      targetAnimState: 'idle',
+      hp: d.hp,
+      maxHp: d.hp,
+      overheadEl,
+      hpFillEl: overheadEl.querySelector('.remoteHeroHpFill'),
+      walkTime: 0
+    };
+    this.remoteObjects.set(peerId, r);
+    return r;
+  },
+
+  rebuildRemoteHero(peerId, newHeroType) {
+    const old = this.remoteObjects.get(peerId);
+    if (old) {
+      if (old.obj) scene.remove(old.obj);
+      if (old.overheadEl) old.overheadEl.remove();
+      this.remoteObjects.delete(peerId);
+    }
+    const p = this.players.get(peerId);
+    this.createRemoteHeroObject(peerId, newHeroType, p?.name);
+  },
+
+  updateRemoteObjects(dt) {
+    this.remoteObjects.forEach(r => {
+      if (!r.obj) return;
+      r.obj.position.lerp(r.targetPos, Math.min(1, dt * 14));
+      if (r.auraGroup) r.auraGroup.rotation.y += dt * 1.2;
+
+      const dist = r.obj.position.distanceTo(r.targetPos);
+      const isMoving = dist > 0.05;
+      if (isMoving) {
+        r.walkTime += dt * 12;
+        const bounce = Math.sin(r.walkTime) * 0.08;
+        r.sprite.scale.set(2.4 + bounce, 2.4 - bounce, 1);
+      } else {
+        r.sprite.scale.set(2.4, 2.4, 1);
+      }
+
+      if (r.overheadEl) {
+        const wp = new THREE.Vector3(r.obj.position.x, 2.3, r.obj.position.z);
+        wp.project(camera);
+        if (wp.z < 1) {
+          const sx = (wp.x * 0.5 + 0.5) * innerWidth;
+          const sy = (-(wp.y * 0.5) + 0.5) * innerHeight;
+          r.overheadEl.style.left = sx + 'px';
+          r.overheadEl.style.top = sy + 'px';
+          r.overheadEl.style.display = 'flex';
+        } else {
+          r.overheadEl.style.display = 'none';
+        }
+      }
+    });
+  },
+
+  startGame() {
+    if (!this.isHost) return;
+    this.broadcast({
+      type: 'START_GAME',
+      wave: 1
+    });
+    this.executeStartGame();
+  },
+
+  executeStartGame() {
+    notify('⚔️ 원정이 시작됩니다! 세계수를 수호하세요!');
+    SoundManager.play('level_up');
+    hide('lobbyHud');
+    resetRun();
+    state = 'play';
+    notify('웨이브 1 · ' + curSides.map(i => GNAMES[i]).join('+') + ' 방향');
+    syncHud();
+  },
+
+  syncMonstersFromHost(hostEnemies) {
+    if (!hostEnemies) return;
+    hostEnemies.forEach(he => {
+      let e = enemies.find(x => x.id === he.id);
+      if (!e && !he.dead) {
+        const d = ETYPES[he.kind] || ETYPES.grunt;
+        e = {
+          id: he.id,
+          kind: he.kind,
+          pos: new THREE.Vector3(he.x, 0, he.z),
+          hp: he.hp,
+          maxHp: he.maxHp,
+          speed: d.spd,
+          dmg: d.dmg,
+          gold: d.gold,
+          xp: d.xp,
+          h: d.h,
+          color: d.color,
+          dead: false,
+          stunTimer: 0,
+          slowTimer: 0,
+          slowAmt: 0,
+          poisonTimer: 0,
+          poisonDmg: 0,
+          tauntTimer: 0,
+          obj: null,
+          anim: null,
+          hpBarEl: null,
+          isElite: false,
+          bob: 0
+        };
+        makeEnemy(e);
+        enemies.push(e);
+      } else if (e) {
+        e.pos.set(he.x, 0, he.z);
+        if (e.obj) e.obj.position.copy(e.pos);
+        e.hp = he.hp;
+        if (he.dead && !e.dead) {
+          killE(e);
+        }
+      }
+    });
+  },
+
+  renderRemoteSkill(msg) {
+    const col = HEROES[msg.heroType]?.color || 0x38bdf8;
+    ring(new THREE.Vector3(msg.x, 0, msg.z), msg.r || 3.5, col);
+    sparkBurst(new THREE.Vector3(msg.x, 0.8, msg.z), col, 14, 6, 0.16);
+    SoundManager.play('skill_cast');
+  }
+};
+
 /* ═══ HERO SELECT ═══ */
 function buildHeroSelect(){
   const box=$('heroChoices');if(!box)return;box.replaceChildren();
@@ -2740,8 +3344,32 @@ function buildHeroSelect(){
       <small>${h.desc}</small>
       <small class="sk-list">${skList}</small>
     `;
-    b.onclick=()=>beginHero(key);box.appendChild(b);
+    b.onclick=()=>onHeroChosen(key);box.appendChild(b);
   }
+}
+
+function onHeroChosen(key){
+  if(gameMode==='solo'){
+    beginHero(key);
+  }else{
+    enterLobby(key);
+  }
+}
+
+function enterLobby(type){
+  SoundManager.init();SoundManager.playBgm();SoundManager.play('click');
+  initHero(type);clearWorld();
+  hero.pos.set(0,0,4);
+  makeHero();
+  hideAll();
+  state='lobby';
+  show('lobbyHud');
+  if(typeof NetworkManager!=='undefined'){
+    NetworkManager.sendHeroSelection(type);
+    NetworkManager.updateLobbyUI();
+  }
+  notify('🎪 대기실 광장에 입장했습니다. 마음껏 움직여보세요!');
+  syncHud();
 }
 
 /* ═══ GAME FLOW ═══ */
@@ -2758,6 +3386,8 @@ function clearWorld(){
 }
 function resetRun(){
   clearWorld();wave=1;gold=500;spawned=0;spawnClock=.5;selectedInvIndex=-1;
+  const pCount = (typeof NetworkManager !== 'undefined') ? NetworkManager.getPlayerCount() : 1;
+  tower.maxHp = 5000 + (pCount - 1) * 1500;
   tower.hp=tower.maxHp;tower.shield=0;tower.atkTimer=0;
   inventory=[];pickSides();
 }
@@ -2800,7 +3430,110 @@ for(const key of SK){const el=$('skill'+key);if(el)el.addEventListener('click',(
 
 /* buttons */
 const sBtn=$('soundBtn');if(sBtn)sBtn.onclick=e=>{e.preventDefault();SoundManager.init();SoundManager.toggleMute()};
-$('startBtn').onclick=()=>{SoundManager.init();SoundManager.playBgm();SoundManager.play('click');hide('start');buildHeroSelect();show('heroSelect')};
+
+// 모드 선택 버튼들
+const startSolo = $('startSoloBtn') || $('startBtn');
+if (startSolo) startSolo.onclick = () => {
+  SoundManager.init(); SoundManager.playBgm(); SoundManager.play('click');
+  gameMode = 'solo';
+  hide('start'); buildHeroSelect(); show('heroSelect');
+};
+
+const createRoomBtn = $('createRoomBtn');
+if (createRoomBtn) createRoomBtn.onclick = () => {
+  SoundManager.init(); SoundManager.playBgm(); SoundManager.play('click');
+  notify('👑 파티 룸을 개설하는 중...');
+  NetworkManager.createRoom(
+    (code) => {
+      notify(`🎉 방 개설 성공! 초대 코드: ${code}`);
+      hide('start');
+      buildHeroSelect();
+      show('heroSelect');
+    },
+    (err) => {
+      notify('❌ 방 생성 실패: ' + err);
+    }
+  );
+};
+
+const openJoinBtn = $('openJoinModalBtn');
+if (openJoinBtn) openJoinBtn.onclick = () => {
+  SoundManager.init(); SoundManager.play('click');
+  const inp = $('roomCodeInput');
+  if (inp) inp.value = '';
+  const st = $('joinStatus');
+  if (st) { st.textContent = ''; st.className = 'joinStatus'; }
+  show('joinModal');
+  setTimeout(() => inp?.focus(), 60);
+};
+
+const closeJoinBtn = $('closeJoinModalBtn');
+if (closeJoinBtn) closeJoinBtn.onclick = () => {
+  SoundManager.play('click');
+  hide('joinModal');
+};
+
+const joinRoomBtn = $('joinRoomBtn');
+if (joinRoomBtn) joinRoomBtn.onclick = () => {
+  const inp = $('roomCodeInput');
+  const code = (inp?.value || '').trim();
+  const st = $('joinStatus');
+  if (!code) {
+    if (st) { st.textContent = '초대 코드를 입력해주세요.'; st.className = 'joinStatus error'; }
+    return;
+  }
+  SoundManager.play('click');
+  if (st) { st.textContent = '파티에 연결 중...'; st.className = 'joinStatus'; }
+  NetworkManager.joinRoom(
+    code,
+    (c) => {
+      if (st) { st.textContent = '연결 성공!'; st.className = 'joinStatus success'; }
+      setTimeout(() => {
+        hide('joinModal');
+        hide('start');
+        buildHeroSelect();
+        show('heroSelect');
+      }, 350);
+    },
+    (err) => {
+      if (st) { st.textContent = err; st.className = 'joinStatus error'; }
+    }
+  );
+};
+
+// 룸 코드 복사 버튼
+const copyRoomCodeBtn = $('copyRoomCodeBtn');
+if (copyRoomCodeBtn) copyRoomCodeBtn.onclick = () => {
+  SoundManager.play('click');
+  if (NetworkManager.roomCode) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(NetworkManager.roomCode).then(() => {
+        notify('📋 초대 코드 (' + NetworkManager.roomCode + ') 복사 완료!');
+      }).catch(() => {
+        notify('초대 코드: ' + NetworkManager.roomCode);
+      });
+    } else {
+      notify('초대 코드: ' + NetworkManager.roomCode);
+    }
+  }
+};
+
+// 대기실 영웅 변경 및 방장 시작 버튼
+const lobbyChangeHeroBtn = $('lobbyChangeHeroBtn');
+if (lobbyChangeHeroBtn) lobbyChangeHeroBtn.onclick = () => {
+  SoundManager.play('click');
+  buildHeroSelect();
+  show('heroSelect');
+};
+
+const lobbyStartBtn = $('lobbyStartBtn');
+if (lobbyStartBtn) lobbyStartBtn.onclick = () => {
+  SoundManager.play('click');
+  if (NetworkManager.isHost) {
+    NetworkManager.startGame();
+  }
+};
+
 $('shopBtn').onclick=e=>{e.preventDefault();SoundManager.play('click');if(state==='shop')closeShop();else openShop()};
 $('skillBtn').onclick=e=>{e.preventDefault();SoundManager.play('click');if(state==='skillUp')closeSkillUp();else openSkillUp()};
 $('tabBuy').onclick=()=>{SoundManager.play('click');setShopTab('buy')};
@@ -2823,10 +3556,10 @@ if (joystickEl && knobEl) {
   const maxRadius = 45;
 
   const isGameplayTouch = target => {
-    if (state !== 'play') return false;
+    if (state !== 'play' && state !== 'lobby') return false;
     if (!target || !target.closest) return true;
     return !target.closest(
-      'button, input, select, textarea, a, .skillSlot, .overlay, #hud, #skillBar, .hudAction'
+      'button, input, select, textarea, a, .skillSlot, .overlay, #hud, #skillBar, .hudAction, #lobbyHud, .lobbyHud'
     );
   };
 
@@ -2865,7 +3598,7 @@ if (joystickEl && knobEl) {
 
   // Floating joystick appears on touch in gameplay area
   window.addEventListener('touchstart', e => {
-    if (state !== 'play' || joystickActive || !e.changedTouches.length) return;
+    if ((state !== 'play' && state !== 'lobby') || joystickActive || !e.changedTouches.length) return;
     for (let i = 0; i < e.changedTouches.length; i++) {
       const t = e.changedTouches[i];
       if (!isGameplayTouch(e.target)) continue;
@@ -2904,7 +3637,7 @@ if (joystickEl && knobEl) {
   // Desktop mouse support for testing floating joystick
   let isMouseDown = false;
   window.addEventListener('mousedown', e => {
-    if (state !== 'play' || isMouseDown) return;
+    if ((state !== 'play' && state !== 'lobby') || isMouseDown) return;
     if (!isGameplayTouch(e.target)) return;
     if (e.clientX < window.innerWidth * 0.6 && e.clientY > 65) {
       isMouseDown = true;

@@ -10,6 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script>
     if (window.location.protocol === 'file:') {
       fetch('http://localhost:8080/index.html', { method: 'HEAD', mode: 'no-cors' })
@@ -73,6 +74,28 @@
       </section>
     </div>
 
+    <!-- ─── LOBBY HUD (대기실 광장 상단 바) ─── -->
+    <div id="lobbyHud" class="lobbyHud hidden">
+      <div class="lobbyHudInner">
+        <div class="lobbyBadge">🎪 대기실 광장</div>
+        <div class="lobbyInfoItem roomCodeBox">
+          <span class="lobbyLabel">초대 코드</span>
+          <span id="lobbyRoomCode" class="lobbyCodeValue">----</span>
+          <button id="copyRoomCodeBtn" type="button" class="lobbyBtn copyBtn">📋 복사</button>
+        </div>
+        <div class="lobbyInfoItem playerCountBox">
+          <span class="lobbyLabel">참가자</span>
+          <b id="lobbyPlayerCount" class="lobbyHighlight">1</b><span class="lobbySub">명</span>
+        </div>
+        <div id="lobbyPlayerList" class="lobbyPlayerList"></div>
+        <div class="lobbyActions">
+          <button id="lobbyChangeHeroBtn" type="button" class="lobbyBtn heroChangeBtn">🎭 영웅 변경</button>
+          <button id="lobbyStartBtn" type="button" class="lobbyStartBtn primaryBtn">⚔️ 모험 시작</button>
+          <span id="lobbyWaitText" class="lobbyWaitNotice hidden">👑 방장이 게임을 시작하기를 대기하는 중...</span>
+        </div>
+      </div>
+    </div>
+
     <!-- ─── START ─── -->
     <div id="start" class="overlay">
       <section class="card startCard">
@@ -83,9 +106,32 @@
         <div class="eyebrow">LUMIA GUARDIANS</div>
         <h1>✨ 루미아 가디언즈</h1>
         <p>아기자기한 마녀와 영웅들과 함께 숲속의 마법 수정탑을 지키세요!<br>
-          5영웅 · 4스킬 · 신비한 마법 조합 · 30웨이브</p>
-        <button id="startBtn" type="button">✨ 모험 시작하기</button>
+          5영웅 · 4스킬 · 마법 아이템 조합 · 인원수 비례 멀티플레이</p>
+        
+        <div class="modeSelectionGroup">
+          <button id="startSoloBtn" type="button" class="modeBtn soloBtn">🗡️ 혼자 하기 (싱글)</button>
+          <div class="multiBtnRow">
+            <button id="createRoomBtn" type="button" class="modeBtn hostBtn">👑 방 만들기 (파티 호스트)</button>
+            <button id="openJoinModalBtn" type="button" class="modeBtn joinBtn">🔗 방 참여하기 (코드 입력)</button>
+          </div>
+        </div>
+
         <div class="hint">WASD / 모바일 터치 조이스틱 이동 · 1234 터치 스킬 · I 상점 · K 스킬포인트 · ESC 일시정지</div>
+      </section>
+    </div>
+
+    <!-- ─── JOIN ROOM MODAL ─── -->
+    <div id="joinModal" class="overlay hidden">
+      <section class="card joinCard">
+        <div class="eyebrow">MULTIPLAYER JOIN</div>
+        <h1>🔗 파티 참여하기</h1>
+        <p>방장에게 공유받은 4자리 초대 코드를 입력하세요.</p>
+        <div class="joinInputGroup">
+          <input type="text" id="roomCodeInput" class="roomCodeInput" placeholder="예: 7A8B" maxlength="16" spellcheck="false" autocomplete="off">
+          <button id="joinRoomBtn" type="button" class="primaryBtn joinActionBtn">입장</button>
+        </div>
+        <div id="joinStatus" class="joinStatus"></div>
+        <button id="closeJoinModalBtn" type="button" class="cancelBtn">취소</button>
       </section>
     </div>
 

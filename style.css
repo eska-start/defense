@@ -898,3 +898,351 @@ body { touch-action: none; user-select: none; -webkit-user-select: none; }
   border-color: #ef4444;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.75), 0 0 16px rgba(239, 68, 68, 0.4);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   MULTIPLAYER & LOBBY SYSTEM STYLES
+   ═══════════════════════════════════════════════════════════ */
+.modeSelectionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin: 16px 0 14px;
+}
+
+.modeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 20px;
+  font-size: 15px;
+  font-weight: 800;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  letter-spacing: -0.01em;
+}
+
+.modeBtn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+}
+
+.modeBtn:active {
+  transform: translateY(1px);
+  filter: brightness(0.95);
+}
+
+.soloBtn {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.25);
+}
+.soloBtn:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 6px 22px rgba(14, 165, 233, 0.45);
+}
+
+.multiBtnRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.hostBtn {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  color: #fffbeb;
+  border-color: rgba(253, 224, 71, 0.5);
+  box-shadow: 0 4px 16px rgba(217, 119, 6, 0.35);
+}
+.hostBtn:hover {
+  border-color: #fef08a;
+  box-shadow: 0 6px 22px rgba(217, 119, 6, 0.55);
+}
+
+.joinBtn {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: #f5f3ff;
+  border-color: rgba(196, 181, 253, 0.45);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
+}
+.joinBtn:hover {
+  border-color: #ddd6fe;
+  box-shadow: 0 6px 22px rgba(124, 58, 237, 0.55);
+}
+
+/* ─── JOIN ROOM MODAL ─── */
+.joinCard {
+  width: min(92vw, 420px) !important;
+  text-align: center;
+  padding: 24px 22px !important;
+}
+
+.joinInputGroup {
+  display: flex;
+  gap: 8px;
+  margin: 18px 0 10px;
+}
+
+.roomCodeInput {
+  flex: 1;
+  padding: 12px 16px;
+  background: #09131d;
+  border: 2px solid #334e68;
+  border-radius: 10px;
+  color: #f8fafc;
+  font-family: monospace;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-align: center;
+  text-transform: uppercase;
+  outline: none;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7);
+  transition: border-color 0.2s;
+}
+
+.roomCodeInput:focus {
+  border-color: #a855f7;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.35);
+}
+
+.joinActionBtn {
+  padding: 12px 24px !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9) !important;
+  color: #fff !important;
+  cursor: pointer;
+}
+
+.joinStatus {
+  min-height: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #94a3b8;
+}
+.joinStatus.error {
+  color: #f87171;
+}
+.joinStatus.success {
+  color: #4ade80;
+}
+
+.cancelBtn {
+  width: 100%;
+  padding: 10px !important;
+  background: #1e293b !important;
+  border: 1px solid #475569 !important;
+  color: #cbd5e1 !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  cursor: pointer;
+}
+.cancelBtn:hover {
+  background: #334155 !important;
+  color: #fff !important;
+}
+
+/* ─── LOBBY HUD (대기실 상단 인터페이스) ─── */
+.lobbyHud {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1050;
+  pointer-events: auto;
+  width: min(96vw, 840px);
+}
+
+.lobbyHudInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 18px;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1.5px solid rgba(251, 191, 36, 0.6);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(251, 191, 36, 0.25);
+}
+
+.lobbyBadge {
+  font-size: 13px;
+  font-weight: 900;
+  color: #fbbf24;
+  padding: 4px 10px;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  border-radius: 8px;
+  letter-spacing: -0.02em;
+}
+
+.lobbyInfoItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.lobbyLabel {
+  font-weight: 600;
+}
+
+.lobbyCodeValue {
+  font-family: monospace;
+  font-size: 15px;
+  font-weight: 900;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.1em;
+}
+
+.lobbyBtn {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  border: 1px solid #475569;
+  background: #1e293b;
+  color: #f1f5f9;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.lobbyBtn:hover {
+  background: #334155;
+  border-color: #94a3b8;
+}
+
+.lobbyHighlight {
+  font-family: monospace;
+  font-size: 16px;
+  color: #4ade80;
+}
+
+.lobbySub {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.lobbyPlayerList {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.lobbyPlayerTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+}
+.lobbyPlayerTag.host {
+  border-color: #fbbf24;
+  color: #fef08a;
+  background: rgba(217, 119, 6, 0.2);
+}
+.lobbyPlayerTag.me {
+  border-color: #38bdf8;
+  color: #bae6fd;
+}
+
+.lobbyActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lobbyStartBtn {
+  padding: 8px 18px !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  border: 1px solid #6ee7b7 !important;
+  color: #fff !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4) !important;
+  cursor: pointer;
+  animation: pulseStart 1.5s infinite ease-in-out;
+}
+@keyframes pulseStart {
+  0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4); }
+  50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.7); }
+}
+
+.lobbyWaitNotice {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fbbf24;
+  padding: 6px 12px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px dashed rgba(251, 191, 36, 0.4);
+  border-radius: 8px;
+  animation: breathe 2s infinite ease-in-out;
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+/* ─── REMOTE HERO OVERHEAD 3D HUD ─── */
+.remoteHeroOverhead {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  z-index: 100;
+}
+
+.remoteHeroName {
+  font-size: 11px;
+  font-weight: 800;
+  color: #f8fafc;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.8);
+  background: rgba(15, 23, 42, 0.75);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+}
+
+.remoteHeroHpBar {
+  width: 48px;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid #1e293b;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.remoteHeroHpFill {
+  width: 100%;
+  height: 100%;
+  background: #22c55e;
+  transition: width 0.15s ease-out;
+}
+
