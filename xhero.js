@@ -1560,6 +1560,19 @@ function heroAttack() {
     if (Math.abs(screenDx) > 0.05) hero.lastDirX = (screenDx < 0) ? -1 : 1;
   }
   if (hero.obj) hero.obj.rotation.y = Math.atan2(hero.facing.x, hero.facing.z);
+
+  if (typeof NetworkManager !== 'undefined' && gameMode !== 'solo') {
+    NetworkManager.send({
+      type: 'HERO_ATTACK',
+      sender: NetworkManager.myId,
+      heroType: hero.type,
+      facingX: Number(hero.facing.x.toFixed(2)),
+      facingZ: Number(hero.facing.z.toFixed(2)),
+      isCrit: isCrit,
+      targetX: Number(target.pos.x.toFixed(2)),
+      targetZ: Number(target.pos.z.toFixed(2))
+    });
+  }
 }
 
 function towerAttack() {
@@ -1605,6 +1618,18 @@ function useSkill(key) {
       hero.anim.skillMotion = { type: 'pulse_cast', timer: 0.35, max: 0.35 };
     }
   }
+
+  if (typeof NetworkManager !== 'undefined' && gameMode !== 'solo') {
+    NetworkManager.send({
+      type: 'HERO_SKILL',
+      sender: NetworkManager.myId,
+      heroType: hero.type,
+      skillKey: key,
+      posX: Number(hero.pos.x.toFixed(2)),
+      posZ: Number(hero.pos.z.toFixed(2))
+    });
+  }
+
   const t = sk.type;
 
   if (t === 'aoe' || t === 'multi') {
@@ -2107,8 +2132,10 @@ function updateAnimations(dt){
       }
       const p=e.pos.clone();p.y+=e.h+0.45;
       p.project(camera);
-      const x=(p.x*.5+.5)*window.innerWidth;
-      const y=(-(p.y*.5)+.5)*window.innerHeight;
+      if(p.z>1){e.hpBarEl.style.display='none';continue;}
+      e.hpBarEl.style.display='';
+      const x=Math.max(0,Math.min(window.innerWidth,(p.x*.5+.5)*window.innerWidth));
+      const y=Math.max(0,Math.min(window.innerHeight,(-(p.y*.5)+.5)*window.innerHeight));
       e.hpBarEl.style.left=x+'px';
       e.hpBarEl.style.top=y+'px';
 
@@ -2145,8 +2172,9 @@ function updateAnimations(dt){
         hBar.style.display = 'flex';
         const p = hero.pos.clone(); p.y += 2.4;
         p.project(camera);
-        const x = (p.x * 0.5 + 0.5) * window.innerWidth;
-        const y = (-(p.y * 0.5) + 0.5) * window.innerHeight;
+        if (p.z > 1) { hBar.style.display = 'none'; return; }
+        const x = Math.max(0, Math.min(window.innerWidth,  (p.x *  0.5 + 0.5) * window.innerWidth));
+        const y = Math.max(0, Math.min(window.innerHeight, (-(p.y * 0.5) + 0.5) * window.innerHeight));
         hBar.style.left = x + 'px';
         hBar.style.top = y + 'px';
 
@@ -2181,8 +2209,9 @@ function updateAnimations(dt){
         tBar.style.display = 'flex';
         const p = new THREE.Vector3(0, 7.0, 0);
         p.project(camera);
-        const x = (p.x * 0.5 + 0.5) * window.innerWidth;
-        const y = (-(p.y * 0.5) + 0.5) * window.innerHeight;
+        if (p.z > 1) { tBar.style.display = 'none'; return; }
+        const x = Math.max(0, Math.min(window.innerWidth,  (p.x *  0.5 + 0.5) * window.innerWidth));
+        const y = Math.max(0, Math.min(window.innerHeight, (-(p.y * 0.5) + 0.5) * window.innerHeight));
         tBar.style.left = x + 'px';
         tBar.style.top = y + 'px';
 
@@ -2788,7 +2817,19 @@ const NetworkManager = {
         if (onError) onError('PeerJS 라이브러리를 불러오지 못했습니다.');
         return;
       }
-      this.peer = new Peer(fullPeerId, { debug: 1 });
+      const peerConfig = {
+        debug: 1,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun.cloudflare.com:3478' }
+          ],
+          iceCandidatePoolSize: 10
+        }
+      };
+      this.peer = new Peer(fullPeerId, peerConfig);
 
       this.peer.on('open', (id) => {
         this.myId = id;
@@ -2852,7 +2893,19 @@ const NetworkManager = {
         if (onError) onError('PeerJS 라이브러리를 불러오지 못했습니다.');
         return;
       }
-      this.peer = new Peer(null, { debug: 1 });
+      const peerConfig = {
+        debug: 1,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun.cloudflare.com:3478' }
+          ],
+          iceCandidatePoolSize: 10
+        }
+      };
+      this.peer = new Peer(null, peerConfig);
 
       let connTimeout = setTimeout(() => {
         if (onError) onError('방을 찾을 수 없습니다. 코드를 확인해주세요.');
@@ -3074,10 +3127,32 @@ const NetworkManager = {
         }
         break;
       }
+      case 'HERO_ATTACK': {
+        if (msg.sender !== this.myId) {
+          this.triggerRemoteAttack(msg);
+          if (this.isHost) {
+            // 발신자를 제외한 나머지 클라이언트에게 중계
+            this.connections.forEach((conn, peerId) => {
+              if (peerId !== msg.sender && conn && conn.open) {
+                conn.send(typeof msg === 'string' ? msg : JSON.stringify(msg));
+              }
+            });
+          }
+        }
+        break;
+      }
+      case 'HERO_SKILL':
       case 'REMOTE_SKILL': {
         if (msg.sender !== this.myId) {
-          this.renderRemoteSkill(msg);
-          if (this.isHost) this.broadcast(msg);
+          this.triggerRemoteSkill(msg);
+          if (this.isHost) {
+            // 발신자를 제외한 나머지 클라이언트에게 중계
+            this.connections.forEach((conn, peerId) => {
+              if (peerId !== msg.sender && conn && conn.open) {
+                conn.send(typeof msg === 'string' ? msg : JSON.stringify(msg));
+              }
+            });
+          }
         }
         break;
       }
@@ -3201,6 +3276,11 @@ const NetworkManager = {
       targetPos: new THREE.Vector3(0, 0, 4),
       targetRotY: 0,
       targetAnimState: 'idle',
+      anim: {
+        attackTimer: 0,
+        skillMotion: null,
+        facing: new THREE.Vector3(0, 0, -1)
+      },
       hp: d.hp,
       maxHp: d.hp,
       overheadEl,
@@ -3222,28 +3302,150 @@ const NetworkManager = {
     this.createRemoteHeroObject(peerId, newHeroType, p?.name);
   },
 
+  triggerRemoteAttack(msg) {
+    if (msg.sender === this.myId) return;
+    let r = this.remoteObjects.get(msg.sender);
+    // remoteObjects가 없으면 자동 생성 (패킷 순서가 뒤바뀐 경우 방어)
+    if (!r) {
+      const p = this.players.get(msg.sender);
+      r = this.createRemoteHeroObject(msg.sender, msg.heroType || 'warrior', p?.name || '동료');
+    }
+    if (!r || !r.obj) return;
+
+    r.anim.attackTimer = 0.28;
+    r.anim.facing.set(msg.facingX || 0, 0, msg.facingZ || -1).normalize();
+    if (r.obj) r.obj.rotation.y = Math.atan2(r.anim.facing.x, r.anim.facing.z);
+
+    const hType = msg.heroType || r.heroType || 'warrior';
+    const col = HEROES[hType]?.color || 0x38bdf8;
+    const targetPos = new THREE.Vector3(msg.targetX, 0, msg.targetZ);
+
+    const isRng = (HEROES[hType]?.rng || 2) > 4;
+    if (isRng) {
+      SoundManager.play(hType === 'mage' ? 'magic_orb' : 'shoot');
+      VFX.init();
+      const mat = new THREE.MeshBasicMaterial({
+        map: VFX.textures.glow, color: col,
+        transparent: true, opacity: 1.0,
+        blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
+      });
+      const obj = new THREE.Mesh(new THREE.PlaneGeometry(0.75, 0.75), mat);
+      obj.rotation.x = -Math.PI / 3;
+      obj.position.copy(r.obj.position); obj.position.y = 1.2; scene.add(obj);
+
+      projectiles.push({ obj, target: { pos: targetPos, dead: false, h: 1.5 }, dmg: 0, isCrit: msg.isCrit, splash: 0, col });
+      sparkBurst(obj.position, col, 6, 2.5, 0.25);
+    } else {
+      SoundManager.play('slash');
+      const hitAngle = Math.atan2(targetPos.x - r.obj.position.x, targetPos.z - r.obj.position.z);
+      slashArcFx(targetPos, col, msg.isCrit ? 2.4 : 1.8, hitAngle);
+      hitImpactStar(targetPos, msg.isCrit ? 0xfde047 : 0xffffff, msg.isCrit ? 1.8 : 1.2);
+      sparkBurst(targetPos, msg.isCrit ? 0xfde047 : col, msg.isCrit ? 12 : 6, 4, 0.25);
+    }
+  },
+
+  triggerRemoteSkill(msg) {
+    if (msg.sender === this.myId) return;
+    const r = this.remoteObjects.get(msg.sender);
+    if (!r) return;
+
+    const hType = msg.heroType || r.heroType || 'warrior';
+    const key = msg.skillKey || 'Q';
+    const sk = HEROES[hType]?.skills[key];
+    const pos = new THREE.Vector3(msg.posX, 0, msg.posZ);
+    const col = HEROES[hType]?.color || 0x38bdf8;
+
+    r.anim.attackTimer = 0.45;
+    if (sk && sk.ulti) {
+      if (hType === 'warrior') r.anim.skillMotion = { type: 'jump_smash', timer: 0.65, max: 0.65 };
+      else if (hType === 'mage') r.anim.skillMotion = { type: 'float_cast', timer: 0.7, max: 0.7 };
+      else if (hType === 'ranger') r.anim.skillMotion = { type: 'shoot_sky', timer: 0.5, max: 0.5 };
+      else if (hType === 'assassin') r.anim.skillMotion = { type: 'omni_slash', timer: 0.6, max: 0.6 };
+      else if (hType === 'paladin') r.anim.skillMotion = { type: 'holy_prayer', timer: 0.6, max: 0.6 };
+    } else {
+      r.anim.skillMotion = { type: 'pulse_cast', timer: 0.35, max: 0.35 };
+    }
+
+    ring(pos, (sk && sk.r) || 4.5, col);
+    sparkBurst(pos, col, 18, 7, 0.3);
+    spawnRuneCircle(pos, col, 3.5, 0.5);
+    SoundManager.play('skill_wind');
+  },
+
   updateRemoteObjects(dt) {
     this.remoteObjects.forEach(r => {
       if (!r.obj) return;
       r.obj.position.lerp(r.targetPos, Math.min(1, dt * 14));
       if (r.auraGroup) r.auraGroup.rotation.y += dt * 1.2;
 
-      const dist = r.obj.position.distanceTo(r.targetPos);
-      const isMoving = dist > 0.05;
-      if (isMoving) {
-        r.walkTime += dt * 12;
-        const bounce = Math.sin(r.walkTime) * 0.08;
-        r.sprite.scale.set(2.4 + bounce, 2.4 - bounce, 1);
-      } else {
-        r.sprite.scale.set(2.4, 2.4, 1);
+      const a = r.anim || (r.anim = { attackTimer: 0, skillMotion: null, facing: new THREE.Vector3(0, 0, -1) });
+
+      // 1. 원격 플레이어 스킬 특수 모션 (점프 스매시, 공중 부양, 사격 반동 등)
+      if (a.skillMotion && a.skillMotion.timer > 0) {
+        a.skillMotion.timer -= dt;
+        const prog = 1 - (a.skillMotion.timer / a.skillMotion.max);
+        const type = a.skillMotion.type;
+        if (type === 'jump_smash') {
+          r.obj.position.copy(r.targetPos);
+          r.obj.position.y += Math.sin(prog * Math.PI) * 2.2;
+        } else if (type === 'float_cast') {
+          r.obj.position.copy(r.targetPos);
+          r.obj.position.y += Math.sin(prog * Math.PI) * 0.8;
+        } else if (type === 'shoot_sky') {
+          const back = a.facing.clone().multiplyScalar(-0.25 * Math.sin(prog * Math.PI));
+          r.obj.position.copy(r.targetPos).add(back);
+          r.obj.position.y += Math.sin(prog * Math.PI) * 0.3;
+        } else {
+          r.obj.position.copy(r.targetPos);
+          r.obj.position.y += Math.sin(prog * Math.PI) * 0.4;
+        }
+        r.sprite.scale.set(2.4 + Math.sin(prog * Math.PI) * 0.3, 2.4 - Math.sin(prog * Math.PI) * 0.2, 1);
+        if (a.skillMotion.timer <= 0) a.skillMotion = null;
+      }
+      // 2. 원격 플레이어 일반 공격 모션 (돌진 찌르기, 반동 후퇴, 공중 부양 펄스, 번개 돌진)
+      else if (a.attackTimer > 0) {
+        a.attackTimer -= dt;
+        const progress = 1 - (a.attackTimer / 0.28);
+        const curve = Math.sin(Math.min(1, Math.max(0, progress)) * Math.PI);
+        const hType = r.heroType || 'warrior';
+
+        if (hType === 'warrior') {
+          const forward = a.facing.clone().multiplyScalar(curve * 0.45);
+          r.obj.position.copy(r.targetPos).add(forward);
+        } else if (hType === 'ranger') {
+          const recoil = a.facing.clone().multiplyScalar(-curve * 0.22);
+          r.obj.position.copy(r.targetPos).add(recoil);
+        } else if (hType === 'mage') {
+          r.obj.position.copy(r.targetPos);
+          r.obj.position.y += curve * 0.35;
+        } else if (hType === 'assassin') {
+          const dash = a.facing.clone().multiplyScalar(curve * 0.55);
+          r.obj.position.copy(r.targetPos).add(dash);
+        } else {
+          r.obj.position.copy(r.targetPos);
+          r.obj.position.y += curve * 0.3;
+        }
+        r.sprite.scale.set(2.4 + curve * 0.25, 2.4 - curve * 0.2, 1);
+      }
+      // 3. 이동 바운스 애니메이션 또는 대기
+      else {
+        const dist = r.obj.position.distanceTo(r.targetPos);
+        const isMoving = dist > 0.05;
+        if (isMoving) {
+          r.walkTime += dt * 12;
+          const bounce = Math.sin(r.walkTime) * 0.08;
+          r.sprite.scale.set(2.4 + bounce, 2.4 - bounce, 1);
+        } else {
+          r.sprite.scale.set(2.4, 2.4, 1);
+        }
       }
 
       if (r.overheadEl) {
         const wp = new THREE.Vector3(r.obj.position.x, 2.3, r.obj.position.z);
         wp.project(camera);
         if (wp.z < 1) {
-          const sx = (wp.x * 0.5 + 0.5) * innerWidth;
-          const sy = (-(wp.y * 0.5) + 0.5) * innerHeight;
+          const sx = Math.max(0, Math.min(window.innerWidth,  (wp.x *  0.5 + 0.5) * window.innerWidth));
+          const sy = Math.max(0, Math.min(window.innerHeight, (-(wp.y * 0.5) + 0.5) * window.innerHeight));
           r.overheadEl.style.left = sx + 'px';
           r.overheadEl.style.top = sy + 'px';
           r.overheadEl.style.display = 'flex';
@@ -3315,13 +3517,6 @@ const NetworkManager = {
         }
       }
     });
-  },
-
-  renderRemoteSkill(msg) {
-    const col = HEROES[msg.heroType]?.color || 0x38bdf8;
-    ring(new THREE.Vector3(msg.x, 0, msg.z), msg.r || 3.5, col);
-    sparkBurst(new THREE.Vector3(msg.x, 0.8, msg.z), col, 14, 6, 0.16);
-    SoundManager.play('skill_cast');
   }
 };
 
@@ -3744,6 +3939,39 @@ window.testSpawnBoss = function() {
 };
 
 SoundManager.init();
+
+// 모바일 탭 전환 시 WebRTC 연결 유지 처리
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    // Web Audio Context 재개
+    if (SoundManager.ctx && SoundManager.ctx.state === 'suspended') {
+      SoundManager.ctx.resume().catch(() => {});
+    }
+    // PeerJS 연결 상태 재확인 (모바일에서 백그라운드 후 ICE 재연결)
+    if (typeof NetworkManager !== 'undefined' && NetworkManager.peer) {
+      try {
+        // 호스트: 모든 연결 heartbeat 확인
+        if (NetworkManager.isHost) {
+          NetworkManager.connections.forEach((conn, peerId) => {
+            if (conn && !conn.open) {
+              NetworkManager.handleDisconnect(peerId);
+            }
+          });
+        } else {
+          // 클라이언트: 호스트 연결 확인
+          if (NetworkManager.hostConn && !NetworkManager.hostConn.open) {
+            notify('⚠️ 네트워크 연결이 끊어졌습니다. 재연결 중...');
+            setTimeout(() => {
+              if (NetworkManager.hostConn && !NetworkManager.hostConn.open) {
+                NetworkManager.handleDisconnect('host');
+              }
+            }, 3000);
+          }
+        }
+      } catch (e) {}
+    }
+  }
+});
 
 })();
 
