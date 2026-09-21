@@ -410,15 +410,28 @@ const SoundManager = {
           break;
         }
         case 'buy': {
-          [784, 987, 1174].forEach((f, i) => {
+          [1046, 1318, 1568, 2093, 2637].forEach((f, i) => {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(f, t + i * 0.05);
-            gain.gain.setValueAtTime(0.26, t + i * 0.05);
-            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.05 + 0.22);
+            osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+            osc.frequency.setValueAtTime(f, t + i * 0.04);
+            gain.gain.setValueAtTime(0.24, t + i * 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.04 + 0.28);
             osc.connect(gain); gain.connect(dest);
-            osc.start(t + i * 0.05); osc.stop(t + i * 0.05 + 0.22);
+            osc.start(t + i * 0.04); osc.stop(t + i * 0.04 + 0.28);
+          });
+          break;
+        }
+        case 'error': {
+          [200, 150].forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(f, t + i * 0.07);
+            gain.gain.setValueAtTime(0.22, t + i * 0.07);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.07 + 0.16);
+            osc.connect(gain); gain.connect(dest);
+            osc.start(t + i * 0.07); osc.stop(t + i * 0.07 + 0.16);
           });
           break;
         }
@@ -2373,34 +2386,164 @@ function recalcStats(){
   if(hero.type==='assassin'&&hero.skillLevels.E>0){const sk=HEROES.assassin.skills.E;hero.crit+=sk.val[hero.skillLevels.E-1]}
   hero.hp=Math.min(hero.hp,hero.maxHp);
 }
-function buyItem(item){
-  if(inventory.length>=8){notify('인벤토리 가득!');return}
-  if(gold<item.cost){notify('골드 부족!');return}
-  gold-=item.cost;inventory.push({...item,stats:{...item.stats}});recalcStats();
+/* ─── SHOP PURCHASE & REWARD FEEDBACK ─── */
+function createFloatingGold(x, y, text, isSpend = true) {
+  const el = document.createElement('div');
+  el.className = 'floatingGold';
+  el.textContent = text;
+  if (!isSpend) el.style.color = '#34d399';
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 850);
+}
+
+function showShopToast(html, isError = false) {
+  let toast = $('shopToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'shopToast';
+    toast.className = 'shopToast';
+    $('shop')?.querySelector('.card')?.appendChild(toast);
+  }
+  toast.className = 'shopToast' + (isError ? ' error' : '');
+  toast.innerHTML = html;
+  toast.classList.add('show');
+  clearTimeout(window.__shopToastTimer);
+  window.__shopToastTimer = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 1600);
+}
+
+function buyItem(item, buttonEl, e){
+  if(inventory.length>=8){
+    SoundManager.play('error');
+    if(buttonEl) {
+      buttonEl.classList.remove('itemShake');
+      void buttonEl.offsetWidth;
+      buttonEl.classList.add('itemShake');
+    }
+    showShopToast('⚠️ 인벤토리가 가득 찼습니다! (최대 8개)', true);
+    notify('인벤토리 가득!');
+    return;
+  }
+  if(gold<item.cost){
+    SoundManager.play('error');
+    if(buttonEl) {
+      buttonEl.classList.remove('itemShake');
+      void buttonEl.offsetWidth;
+      buttonEl.classList.add('itemShake');
+    }
+    showShopToast('⚠️ 골드가 부족합니다!', true);
+    notify('골드 부족!');
+    return;
+  }
+  gold-=item.cost;
+  inventory.push({...item,stats:{...item.stats}});
+  const newlyAddedIdx = inventory.length - 1;
+  recalcStats();
   SoundManager.play('buy');
-  notify(item.name+' 획득');renderShop();syncHud();
+
+  if(buttonEl) {
+    buttonEl.classList.remove('itemBoughtPop');
+    void buttonEl.offsetWidth;
+    buttonEl.classList.add('itemBoughtPop');
+  }
+
+  if(e && e.clientX && e.clientY) {
+    createFloatingGold(e.clientX, e.clientY, `-${item.cost} G`, true);
+  }
+
+  const goldEl = $('shopGold');
+  if(goldEl) {
+    goldEl.classList.remove('goldSpent');
+    void goldEl.offsetWidth;
+    goldEl.classList.add('goldSpent');
+  }
+
+  const tabInv = $('tabInv');
+  if(tabInv) {
+    tabInv.textContent = `인벤토리 (${inventory.length}/8)`;
+    tabInv.classList.remove('tabBounced');
+    void tabInv.offsetWidth;
+    tabInv.classList.add('tabBounced');
+  }
+
+  showShopToast(`✨ <strong>${item.name}</strong> 획득! <span style="color:#f59e0b">(-${item.cost} G)</span>`);
+  notify(item.name+' 획득');
+  renderShop(newlyAddedIdx);
+  syncHud();
 }
 function canCombine(r){
   const need=[...r.mats],avail=inventory.map(i=>i.id);
   for(const m of need){const idx=avail.indexOf(m);if(idx===-1)return false;avail.splice(idx,1)}
   return r.extra<=0||gold>=r.extra;
 }
-function doCombine(r){
-  if(!canCombine(r))return;
+function doCombine(r, buttonEl, e){
+  if(!canCombine(r)){
+    SoundManager.play('error');
+    if(buttonEl) {
+      buttonEl.classList.remove('itemShake');
+      void buttonEl.offsetWidth;
+      buttonEl.classList.add('itemShake');
+    }
+    showShopToast('⚠️ 조합 재료가 부족합니다!', true);
+    notify('재료 부족!');
+    return;
+  }
   const need=[...r.mats];
   for(const mid of need){const idx=inventory.findIndex(i=>i.id===mid);if(idx!==-1)inventory.splice(idx,1)}
-  if(r.extra>0)gold-=r.extra;
+  if(r.extra>0) {
+    gold-=r.extra;
+    if(e && e.clientX && e.clientY) {
+      createFloatingGold(e.clientX, e.clientY, `-${r.extra} G`, true);
+    }
+  }
   inventory.push({id:r.id,name:r.name,desc:r.desc,stats:{...r.stats},tier:r.tier,cost:0});
-  recalcStats();notify(r.name+' 조합 완료!');selectedInvIndex=-1;
+  const newlyAddedIdx = inventory.length - 1;
+  recalcStats();
   SoundManager.play('craft');
-  renderShop();syncHud();
+
+  if(buttonEl) {
+    buttonEl.classList.remove('itemBoughtPop');
+    void buttonEl.offsetWidth;
+    buttonEl.classList.add('itemBoughtPop');
+  }
+
+  const tabInv = $('tabInv');
+  if(tabInv) {
+    tabInv.textContent = `인벤토리 (${inventory.length}/8)`;
+    tabInv.classList.remove('tabBounced');
+    void tabInv.offsetWidth;
+    tabInv.classList.add('tabBounced');
+  }
+
+  showShopToast(`🎉 [T${r.tier}] <strong>${r.name}</strong> 조합 완성!`);
+  notify(r.name+' 조합 완료!');
+  selectedInvIndex=-1;
+  renderShop(newlyAddedIdx);
+  syncHud();
 }
-function sellItem(idx){
+function sellItem(idx, e){
   const it=inventory[idx];if(!it)return;
-  gold+=Math.floor((it.cost||0)*.5);inventory.splice(idx,1);recalcStats();
-  notify(it.name+' 판매 완료');selectedInvIndex=-1;
+  const earn = Math.floor((it.cost||0)*.5);
+  gold+=earn;
+  inventory.splice(idx,1);
+  recalcStats();
+
+  if(e && e.clientX && e.clientY) {
+    createFloatingGold(e.clientX, e.clientY, `+${earn} G`, false);
+  }
+
+  const tabInv = $('tabInv');
+  if(tabInv) tabInv.textContent = `인벤토리 (${inventory.length}/8)`;
+
+  showShopToast(`💰 <strong>${it.name}</strong> 판매 완료 (+${earn} G)`);
+  notify(it.name+' 판매 완료');
+  selectedInvIndex=-1;
   SoundManager.play('gold');
-  renderShop();syncHud();
+  renderShop();
+  syncHud();
 }
 
 /* ═══ UI ═══ */
@@ -2442,9 +2585,10 @@ function syncHud(){
   if(hero.dead){show('deadOverlay');$('deadTimer').textContent=Math.ceil(deadTimer)+'초'}else hide('deadOverlay');
 }
 
-function renderShop(){
+function renderShop(newlyAddedIdx = -1){
   const box=$('shopItems'),rbox=$('recipeItems'),inv=$('shopInventory');
   if(!box)return;$('shopGold').textContent=gold+' G';
+  if($('tabInv')) $('tabInv').textContent = `인벤토리 (${inventory.length}/8)`;
 
   box.replaceChildren();
   for(const item of ITEMS){
@@ -2458,7 +2602,8 @@ function renderShop(){
         <em>${item.cost} G</em>
       </div>
     `;
-    b.onclick=()=>buyItem(item);box.appendChild(b);
+    b.onclick=e=>buyItem(item, b, e);
+    box.appendChild(b);
   }
 
   if(rbox){
@@ -2479,7 +2624,14 @@ function renderShop(){
         </div>
       `;
       b.title=`${r.name} [T${r.tier}]\n${r.desc}\n재료: ${mats}${r.extra>0?' +'+r.extra+'G':''}`;
-      b.onclick=()=>{if(can)doCombine(r);else notify('재료 부족!')};
+      b.onclick=e=>{if(can)doCombine(r, b, e);else {
+        SoundManager.play('error');
+        b.classList.remove('itemShake');
+        void b.offsetWidth;
+        b.classList.add('itemShake');
+        showShopToast('⚠️ 조합 재료가 부족합니다!', true);
+        notify('재료 부족!');
+      }};
       rbox.appendChild(b);
     }
   }
@@ -2489,7 +2641,8 @@ function renderShop(){
     inventory.forEach((it,i)=>{
       const b=document.createElement('button');b.type='button';
       const isSel=(i===selectedInvIndex);
-      b.className='invItem compact'+(isSel?' selected':'');
+      const isNew=(i===newlyAddedIdx);
+      b.className='invItem compact'+(isSel?' selected':'')+(isNew?' newlyAdded':'');
       const iconUrl=`./icons/item_${it.id}.png`;
       const tierColor=it.tier>=4?'#ff6644':it.tier===3?'#ff9944':it.tier===2?'#66bbff':'#ccc';
       b.innerHTML=`
@@ -2527,7 +2680,7 @@ function renderShop(){
           <button type="button" class="cancelSellBtn">\ucde8\uc18c</button>
         </div>
       `;
-      confBox.querySelector('.confirmSellBtn').onclick=()=>{sellItem(selectedInvIndex)};
+      confBox.querySelector('.confirmSellBtn').onclick=e=>{sellItem(selectedInvIndex, e)};
       confBox.querySelector('.cancelSellBtn').onclick=()=>{selectedInvIndex=-1;renderShop()};
       inv.appendChild(confBox);
     }
