@@ -3378,7 +3378,11 @@ const NetworkManager = {
       anim: {
         attackTimer: 0,
         skillMotion: null,
-        facing: new THREE.Vector3(0, 0, -1)
+        facing: new THREE.Vector3(0, 0, -1),
+        frame: 0,
+        frameTimer: 0,
+        state: 'idle',
+        walkTime: 0
       },
       hp: d.hp,
       maxHp: d.hp,
@@ -3477,9 +3481,43 @@ const NetworkManager = {
       r.obj.position.lerp(r.targetPos, Math.min(1, dt * 14));
       if (r.auraGroup) r.auraGroup.rotation.y += dt * 1.2;
 
-      const a = r.anim || (r.anim = { attackTimer: 0, skillMotion: null, facing: new THREE.Vector3(0, 0, -1) });
+      const a = r.anim || (r.anim = {
+        attackTimer: 0, skillMotion: null,
+        facing: new THREE.Vector3(0, 0, -1),
+        frame: 0, frameTimer: 0, state: 'idle', walkTime: 0
+      });
 
-      // 1. 원격 플레이어 스킬 특수 모션 (점프 스매시, 공중 부양, 사격 반동 등)
+      // 스프라이트 UV 애니메이션 (attack/walk/idle row + 4프레임)
+      let targetState = 'idle', frameRate = 3.5;
+      if (a.skillMotion && a.skillMotion.timer > 0) {
+        targetState = 'attack'; frameRate = 12;
+      } else if (a.attackTimer > 0) {
+        targetState = 'attack'; frameRate = 12;
+      } else if (r.targetAnimState === 'walk' || r.obj.position.distanceTo(r.targetPos) > 0.12) {
+        targetState = 'walk'; frameRate = 9;
+      }
+      if (a.state !== targetState) { a.state = targetState; a.frame = 0; a.frameTimer = 0; }
+      a.frameTimer += dt;
+      if (a.frameTimer >= 1 / frameRate) { a.frameTimer = 0; a.frame = (a.frame + 1) % 4; }
+
+      if (r.tex) {
+        // Row: idle=2/3, walk=1/3, attack=0.0  |  4 columns
+        let rowY = 2 / 3;
+        if (a.state === 'walk') rowY = 1 / 3;
+        else if (a.state === 'attack') rowY = 0.0;
+        // 방향 플립 (facing.x 기반)
+        const isLeft = (a.facing.x < 0);
+        if (isLeft) {
+          r.tex.repeat.set(-0.25, 1 / 3);
+          r.tex.offset.set((a.frame + 1) * 0.25, rowY);
+        } else {
+          r.tex.repeat.set(0.25, 1 / 3);
+          r.tex.offset.set(a.frame * 0.25, rowY);
+        }
+        r.tex.needsUpdate = true;
+      }
+
+      // 1. 스킬 특수 모션
       if (a.skillMotion && a.skillMotion.timer > 0) {
         a.skillMotion.timer -= dt;
         const prog = 1 - (a.skillMotion.timer / a.skillMotion.max);
@@ -3501,7 +3539,7 @@ const NetworkManager = {
         r.sprite.scale.set(2.4 + Math.sin(prog * Math.PI) * 0.3, 2.4 - Math.sin(prog * Math.PI) * 0.2, 1);
         if (a.skillMotion.timer <= 0) a.skillMotion = null;
       }
-      // 2. 원격 플레이어 일반 공격 모션 (돌진 찌르기, 반동 후퇴, 공중 부양 펄스, 번개 돌진)
+      // 2. 일반 공격 모션 (돌진/반동/부양/대시)
       else if (a.attackTimer > 0) {
         a.attackTimer -= dt;
         const progress = 1 - (a.attackTimer / 0.28);
@@ -3526,13 +3564,13 @@ const NetworkManager = {
         }
         r.sprite.scale.set(2.4 + curve * 0.25, 2.4 - curve * 0.2, 1);
       }
-      // 3. 이동 바운스 애니메이션 또는 대기
+      // 3. 이동/대기 바운스
       else {
         const dist = r.obj.position.distanceTo(r.targetPos);
         const isMoving = dist > 0.05;
         if (isMoving) {
-          r.walkTime += dt * 12;
-          const bounce = Math.sin(r.walkTime) * 0.08;
+          a.walkTime = (a.walkTime || 0) + dt * 12;
+          const bounce = Math.sin(a.walkTime) * 0.08;
           r.sprite.scale.set(2.4 + bounce, 2.4 - bounce, 1);
         } else {
           r.sprite.scale.set(2.4, 2.4, 1);
