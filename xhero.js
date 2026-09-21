@@ -1527,8 +1527,6 @@ function heroAttack() {
   if (isRng) {
     SoundManager.play(hero.type === 'mage' ? 'magic_orb' : 'shoot');
     const col = hero.type === 'mage' ? 0x38bdf8 : 0x22c55e;
-    
-    // Additive glowing orb projectile
     VFX.init();
     const mat = new THREE.MeshBasicMaterial({
       map: VFX.textures.glow, color: col,
@@ -1538,21 +1536,72 @@ function heroAttack() {
     const obj = new THREE.Mesh(new THREE.PlaneGeometry(0.75, 0.75), mat);
     obj.rotation.x = -Math.PI / 3;
     obj.position.copy(hero.pos); obj.position.y = 1.2; scene.add(obj);
-
-    const p = { obj, target, dmg, isCrit, splash: 0, col };
-    if (hero.poison > 0) { p.poisonDmg = hero.poisonDmg; p.poisonDur = hero.poison; }
-    projectiles.push(p);
     sparkBurst(obj.position, col, 6, 2.5, 0.25);
+
+    // 멀티: 클라이언트는 발사체 VFX만 로컬 실행, 데미지는 호스트에 위임
+    if (gameMode === 'solo' || (typeof NetworkManager !== 'undefined' && NetworkManager.isHost)) {
+      const p = { obj, target, dmg, isCrit, splash: 0, col };
+      if (hero.poison > 0) { p.poisonDmg = hero.poisonDmg; p.poisonDur = hero.poison; }
+      projectiles.push(p);
+    } else {
+      // 클라이언트: 발사체 비주얼만 (타겟 pos 기준으로 이동)
+      const fakeTarget = { pos: target.pos.clone(), dead: false, h: target.h || 1.5 };
+      const p = { obj, target: fakeTarget, dmg: 0, isCrit, splash: 0, col, clientOnly: true };
+      projectiles.push(p);
+      // 호스트에게 데미지 전송
+      if (typeof NetworkManager !== 'undefined') {
+        NetworkManager.send({
+          type: 'HIT_ENEMY',
+          sender: NetworkManager.myId,
+          enemyId: target.id,
+          x: Number(target.pos.x.toFixed(2)),
+          z: Number(target.pos.z.toFixed(2)),
+          dmg: Number(dmg.toFixed(1)),
+          isCrit
+        });
+      }
+    }
   } else {
     SoundManager.play('slash');
     shakeScreen(isCrit ? 0.18 : 0.08, 0.12);
-    hitE(target, dmg, isCrit); if (hero.lifesteal) hero.hp = Math.min(hero.maxHp, hero.hp + hero.lifesteal);
-    if (hero.poison > 0) { target.poisonTimer = hero.poison; target.poisonDmg = hero.poisonDmg; }
 
     const hitAngle = Math.atan2(target.pos.x - hero.pos.x, target.pos.z - hero.pos.z);
     slashArcFx(target.pos, HEROES[hero.type].color, isCrit ? 2.4 : 1.8, hitAngle);
     hitImpactStar(target.pos, isCrit ? 0xfde047 : 0xffffff, isCrit ? 1.8 : 1.2);
     sparkBurst(target.pos, isCrit ? 0xfde047 : HEROES[hero.type].color, isCrit ? 14 : 7, isCrit ? 6 : 4, 0.28);
+
+    if (gameMode === 'solo' || (typeof NetworkManager !== 'undefined' && NetworkManager.isHost)) {
+      // 솔로 or 호스트: 로컬에서 직접 데미지
+      hitE(target, dmg, isCrit);
+      if (hero.lifesteal) hero.hp = Math.min(hero.maxHp, hero.hp + hero.lifesteal);
+      if (hero.poison > 0) { target.poisonTimer = hero.poison; target.poisonDmg = hero.poisonDmg; }
+    } else {
+      // 클라이언트: 호스트에게 HIT_ENEMY 패킷 전송
+      if (typeof NetworkManager !== 'undefined') {
+        NetworkManager.send({
+          type: 'HIT_ENEMY',
+          sender: NetworkManager.myId,
+          enemyId: target.id,
+          x: Number(target.pos.x.toFixed(2)),
+          z: Number(target.pos.z.toFixed(2)),
+          dmg: Number(dmg.toFixed(1)),
+          isCrit
+        });
+      }
+      // 클라이언트에서도 로컬 HP 미리 감소 (피드백용, 다음 SYNC에서 덮어씌워짐)
+      if (!target.dead) {
+        target.hp -= dmg;
+        SoundManager.play('hit_monster');
+        showDamageText(target.pos, Math.round(dmg), isCrit ? '#fde047' : '#ffffff', isCrit);
+        if (target.anim) {
+          target.anim.hitTimer = 0.12;
+          if (target.anim.sprite && target.anim.sprite.material) {
+            target.anim.sprite.material.color.setHex(isCrit ? 0xfef08a : 0xff7777);
+          }
+        }
+        if (hero.lifesteal) hero.hp = Math.min(hero.maxHp, hero.hp + hero.lifesteal);
+      }
+    }
   }
   hero.facing.set(target.pos.x - hero.pos.x, 0, target.pos.z - hero.pos.z).normalize();
   if (!hero.isMoving) {
@@ -2260,7 +2309,10 @@ function update(dt){
   /* poison decay */
   if(hero.poison>0){hero.poison-=dt;if(hero.poison<=0){hero.poison=0;hero.poisonDmg=0}}
 
-  towerAttack();
+  // 타워 공격: 솔로 또는 호스트만 실행
+  if (gameMode === 'solo' || (typeof NetworkManager !== 'undefined' && NetworkManager.isHost)) {
+    towerAttack();
+  }
 
   /* projectiles */
   for(const p of projectiles){
@@ -2271,7 +2323,12 @@ function update(dt){
     if(Math.random() < 0.45) sparkBurst(p.obj.position, p.col || 0x38bdf8, 1, 1.2, 0.08);
     if(p.obj.position.distanceTo(to)<.28){
       const hitCol = p.col || 0x38bdf8;
-      if(p.splash&&p.splash>0){
+      if(p.clientOnly){
+        // 클라이언트 전용 발사체: VFX만 실행, 데미지 없음
+        sparkBurst(p.target.pos, hitCol, p.isCrit ? 10 : 5, 4, 0.12);
+        hitImpactStar(p.target.pos, p.isCrit ? 0xfde047 : hitCol, p.isCrit ? 1.6 : 1.1);
+        p.target.dead = true; // 비주얼 발사체 종료 트리거
+      }else if(p.splash&&p.splash>0){
         for(const e of enemies)if(!e.dead&&e.pos.distanceTo(p.target.pos)<p.splash)hitE(e,p.dmg*(e===p.target?1:.5),p.isCrit);
         ring(p.target.pos, p.splash, hitCol);
         sparkBurst(p.target.pos, hitCol, 14, 5, 0.16);
@@ -2294,60 +2351,80 @@ function update(dt){
   }
   for(let i=zones.length-1;i>=0;i--)if(zones[i].timer<=0){scene.remove(zones[i].obj);zones.splice(i,1)}
 
-  /* spawn */
-  spawnClock-=dt;
-  if(spawnClock<=0&&spawned<enemyCount()){spawnClock=Math.max(.2,.55-wave*.005);spawnEnemy()}
+  // 적 스폰/이동/공격: 솔로 또는 호스트만 실행 (클라이언트는 SYNC_MONSTERS로 동기화)
+  if (gameMode === 'solo' || (typeof NetworkManager !== 'undefined' && NetworkManager.isHost)) {
+    /* spawn */
+    spawnClock-=dt;
+    if(spawnClock<=0&&spawned<enemyCount()){spawnClock=Math.max(.2,.55-wave*.005);spawnEnemy()}
 
-  /* enemies */
-  let alive=0;
-  for(const e of enemies){
-    if(e.dead)continue;alive++;
-    if(e.stunTimer>0){e.stunTimer-=dt;if(e.obj)e.obj.position.y=e.pos.y+Math.sin(performance.now()*.02)*.15;continue}
-    if(e.poisonTimer>0){e.poisonTimer-=dt;hitE(e,e.poisonDmg*dt)}
+    /* enemies */
+    let alive=0;
+    for(const e of enemies){
+      if(e.dead)continue;alive++;
+      if(e.stunTimer>0){e.stunTimer-=dt;if(e.obj)e.obj.position.y=e.pos.y+Math.sin(performance.now()*.02)*.15;continue}
+      if(e.poisonTimer>0){e.poisonTimer-=dt;hitE(e,e.poisonDmg*dt)}
 
-    /* target: tower or hero (if taunted) */
-    let tx=0,tz=0;
-    if(e.tauntTimer>0){tx=hero.pos.x;tz=hero.pos.z;e.tauntTimer-=dt}
-    const dir=new THREE.Vector3(tx-e.pos.x,0,tz-e.pos.z),dist=dir.length();
-    e.distToTarget = dist;
+      /* target: tower or hero (if taunted) */
+      let tx=0,tz=0;
+      if(e.tauntTimer>0){tx=hero.pos.x;tz=hero.pos.z;e.tauntTimer-=dt}
+      const dir=new THREE.Vector3(tx-e.pos.x,0,tz-e.pos.z),dist=dir.length();
+      e.distToTarget = dist;
 
-    if(dist<2.6&&tx===0&&tz===0){
-      let dmg=e.dmg*dt;
-      e.atkCool = (e.atkCool || 0) - dt;
-      if (e.atkCool <= 0) {
-        e.atkCool = 0.8;
-        e.lungeTimer = 0.22;
-        if (e.anim && e.anim.isBoss) {
-          e.anim.attackTimer = 0.65; // 👑 보스 대검 휘두르기 공격 모션 트리거
+      if(dist<2.6&&tx===0&&tz===0){
+        let dmg=e.dmg*dt;
+        e.atkCool = (e.atkCool || 0) - dt;
+        if (e.atkCool <= 0) {
+          e.atkCool = 0.8;
+          e.lungeTimer = 0.22;
+          if (e.anim && e.anim.isBoss) {
+            e.anim.attackTimer = 0.65;
+          }
+        }
+        if(tower.shield>0){const ab=Math.min(tower.shield,dmg);tower.shield-=ab;dmg-=ab}
+        tower.hp-=dmg;
+      }else if(dist>0.3){
+        let spd=e.speed;if(e.slowTimer>0){spd*=(1-e.slowAmt);e.slowTimer-=dt}
+        dir.normalize();e.pos.addScaledVector(dir,spd*dt);
+        const screenDx = dir.x - dir.z;
+        if(e.anim && Math.abs(screenDx) > 0.04) e.anim.lastDirX = (screenDx < 0) ? -1 : 1;
+        if(e.obj)e.obj.rotation.y=Math.atan2(dir.x,dir.z);
+      }
+
+      /* damage hero on contact */
+      if(!hero.dead&&hero.pos.distanceTo(e.pos)<1.8){
+        let dmg=e.dmg*dt*.5;
+        const db=hero.buffs.find(b=>b.type==='def');if(db)dmg*=(1-db.val);
+        const eb=hero.buffs.find(b=>b.type==='evasion');
+        if((eb&&Math.random()<eb.val*dt*10)||(hero.evasion>0&&Math.random()<hero.evasion*dt*10))dmg=0;
+        if(hero.armor>0)dmg*=Math.max(.3,1-hero.armor*.04);
+        if(hero.shield>0){const ab=Math.min(hero.shield,dmg);hero.shield-=ab;dmg-=ab}
+        hero.hp-=dmg;
+        if(hero.anim && hero.anim.sprite && hero.anim.sprite.material){
+          hero.anim.hitTimer = 0.12;
+          hero.anim.sprite.material.color.setHex(0xff7777);
         }
       }
-      if(tower.shield>0){const ab=Math.min(tower.shield,dmg);tower.shield-=ab;dmg-=ab}
-      tower.hp-=dmg;
-    }else if(dist>0.3){
-      let spd=e.speed;if(e.slowTimer>0){spd*=(1-e.slowAmt);e.slowTimer-=dt}
-      dir.normalize();e.pos.addScaledVector(dir,spd*dt);
-      // Screen-space horizontal movement determination for isometric camera (16,20,16): dir.x - dir.z
-      const screenDx = dir.x - dir.z;
-      if(e.anim && Math.abs(screenDx) > 0.04) e.anim.lastDirX = (screenDx < 0) ? -1 : 1;
-      if(e.obj)e.obj.rotation.y=Math.atan2(dir.x,dir.z);
-    }
 
-    /* damage hero on contact */
-    if(!hero.dead&&hero.pos.distanceTo(e.pos)<1.8){
-      let dmg=e.dmg*dt*.5;
-      const db=hero.buffs.find(b=>b.type==='def');if(db)dmg*=(1-db.val);
-      const eb=hero.buffs.find(b=>b.type==='evasion');
-      if((eb&&Math.random()<eb.val*dt*10)||(hero.evasion>0&&Math.random()<hero.evasion*dt*10))dmg=0;
-      if(hero.armor>0)dmg*=Math.max(.3,1-hero.armor*.04);
-      if(hero.shield>0){const ab=Math.min(hero.shield,dmg);hero.shield-=ab;dmg-=ab}
-      hero.hp-=dmg;
-      if(hero.anim && hero.anim.sprite && hero.anim.sprite.material){
-        hero.anim.hitTimer = 0.12;
-        hero.anim.sprite.material.color.setHex(0xff7777);
+      if(e.obj){e.obj.position.copy(e.pos)}
+    }
+  } else {
+    // 클라이언트: 적 오브젝트 위치만 반영 (syncMonstersFromHost에서 이미 업데이트됨)
+    for(const e of enemies){
+      if(e.dead) continue;
+      if(e.obj) e.obj.position.copy(e.pos);
+      /* damage hero on contact (클라이언트도 로컬 히어로 데미지는 처리) */
+      if(!hero.dead&&hero.pos.distanceTo(e.pos)<1.8){
+        let dmg=e.dmg*dt*.5;
+        const db=hero.buffs.find(b=>b.type==='def');if(db)dmg*=(1-db.val);
+        if(hero.armor>0)dmg*=Math.max(.3,1-hero.armor*.04);
+        if(hero.shield>0){const ab=Math.min(hero.shield,dmg);hero.shield-=ab;dmg-=ab}
+        hero.hp-=dmg;
+        if(hero.anim && hero.anim.sprite && hero.anim.sprite.material){
+          hero.anim.hitTimer = 0.12;
+          hero.anim.sprite.material.color.setHex(0xff7777);
+        }
       }
     }
-
-    if(e.obj){e.obj.position.copy(e.pos)}
   }
 
   /* update limb animations & horizontal health bars */
@@ -2388,30 +2465,38 @@ function update(dt){
     effects.splice(i,1);
   }
 
-  /* clean dead */
-  for(let i=enemies.length-1;i>=0;i--)if(enemies[i].dead){
-    if(enemies[i].hpBarEl){enemies[i].hpBarEl.remove();enemies[i].hpBarEl=null}
-    scene.remove(enemies[i].obj);enemies.splice(i,1);
-  }
+  /* clean dead - 솔로/호스트에서만 배열에서 제거 */
+  if (gameMode === 'solo' || (typeof NetworkManager !== 'undefined' && NetworkManager.isHost)) {
+    for(let i=enemies.length-1;i>=0;i--)if(enemies[i].dead){
+      if(enemies[i].hpBarEl){enemies[i].hpBarEl.remove();enemies[i].hpBarEl=null}
+      scene.remove(enemies[i].obj);enemies.splice(i,1);
+    }
 
-  /* wave done */
-  /* wave clear */
-  if(spawned>=enemyCount()&&alive===0){
-    if(wave>=MAX_WAVE){state='victory';
-      $('victoryDetail').textContent=`레벨 ${hero.level} · ${gold}G · ${HEROES[hero.type].name}`;
-      SoundManager.play('victory');
-      show('victory');return}
-    wave++;spawned=0;spawnClock=2;gold+=60+wave*8;
-    tower.hp=Math.min(tower.maxHp,tower.hp+150);pickSides();
-    SoundManager.play('level_up');
-    notify('웨이브 '+wave+' · '+curSides.map(i=>GNAMES[i]).join('+'))
-  }
+    /* wave done */
+    const alive = enemies.filter(e => !e.dead).length;
+    if(spawned>=enemyCount()&&alive===0){
+      if(wave>=MAX_WAVE){state='victory';
+        $('victoryDetail').textContent=`레벨 ${hero.level} · ${gold}G · ${HEROES[hero.type].name}`;
+        SoundManager.play('victory');
+        show('victory');return}
+      wave++;spawned=0;spawnClock=2;gold+=60+wave*8;
+      tower.hp=Math.min(tower.maxHp,tower.hp+150);pickSides();
+      SoundManager.play('level_up');
+      notify('웨이브 '+wave+' · '+curSides.map(i=>GNAMES[i]).join('+'))
+    }
 
-  /* tower fall */
-  if(tower.hp<=0){tower.hp=0;state='over';
-    $('overDetail').textContent=`웨이브 ${wave}/${MAX_WAVE} · 레벨 ${hero.level} · ${gold}G · ${HEROES[hero.type].name}`;
-    SoundManager.play('gameover');
-    show('gameover')}
+    /* tower fall */
+    if(tower.hp<=0){tower.hp=0;state='over';
+      $('overDetail').textContent=`웨이브 ${wave}/${MAX_WAVE} · 레벨 ${hero.level} · ${gold}G · ${HEROES[hero.type].name}`;
+      SoundManager.play('gameover');
+      show('gameover')}
+  } else {
+    // 클라이언트: dead 적은 syncMonstersFromHost에서 처리. 타워 패배는 SYNC_MONSTERS towerHp로 판단.
+    if(tower.hp<=0){tower.hp=0;state='over';
+      $('overDetail').textContent=`웨이브 ${wave}/${MAX_WAVE} · 레벨 ${hero.level} · ${gold}G · ${HEROES[hero.type].name}`;
+      SoundManager.play('gameover');
+      show('gameover')}
+  }
 
   syncHud();
 }
@@ -3109,6 +3194,15 @@ const NetworkManager = {
       case 'SYNC_MONSTERS': {
         if (!this.isHost) {
           this.syncMonstersFromHost(msg.enemies);
+          // dead 처리된 몬스터를 배열에서 제거 (클라이언트 전용)
+          for(let i=enemies.length-1;i>=0;i--){
+            const e = enemies[i];
+            if(e.dead){
+              if(e.hpBarEl){e.hpBarEl.remove();e.hpBarEl=null;}
+              if(e.obj){scene.remove(e.obj);e.obj=null;}
+              enemies.splice(i,1);
+            }
+          }
           if (typeof msg.towerHp !== 'undefined') {
             tower.hp = msg.towerHp;
             tower.maxHp = msg.towerMaxHp || tower.maxHp;
@@ -3192,8 +3286,13 @@ const NetworkManager = {
       }
 
       if (this.isHost && state === 'play') {
-        const enemyData = enemies.slice(0, 40).map(e => ({
-          id: e.id || (e.id = Math.random().toString(36).substr(2, 9)),
+        // 살아있는 몬스터 + 방금 죽은 몬스터(dead=true인 것)를 전송해서 클라이언트 동기화
+        // id 없는 것은 id 부여 후 전송
+        enemies.forEach(e => { if (!e.id) e.id = Math.random().toString(36).substr(2, 9); });
+        const aliveEnemies = enemies.filter(e => !e.dead).slice(0, 50);
+        const deadEnemies = enemies.filter(e => e.dead && e.id).slice(0, 20);
+        const enemyData = [...aliveEnemies, ...deadEnemies].map(e => ({
+          id: e.id,
           kind: e.kind,
           x: Number(e.pos.x.toFixed(2)),
           z: Number(e.pos.z.toFixed(2)),
@@ -3477,9 +3576,13 @@ const NetworkManager = {
 
   syncMonstersFromHost(hostEnemies) {
     if (!hostEnemies) return;
+    const hostIds = new Set(hostEnemies.map(he => he.id).filter(Boolean));
+
     hostEnemies.forEach(he => {
+      if (!he.id) return;
       let e = enemies.find(x => x.id === he.id);
       if (!e && !he.dead) {
+        // 신규 몬스터 생성
         const d = ETYPES[he.kind] || ETYPES.grunt;
         e = {
           id: he.id,
@@ -3509,14 +3612,32 @@ const NetworkManager = {
         makeEnemy(e);
         enemies.push(e);
       } else if (e) {
-        e.pos.set(he.x, 0, he.z);
-        if (e.obj) e.obj.position.copy(e.pos);
+        // 기존 몬스터 위치 및 HP 업데이트
+        if (!e.dead) {
+          e.pos.set(he.x, 0, he.z);
+          if (e.obj) e.obj.position.copy(e.pos);
+        }
         e.hp = he.hp;
+        // 호스트가 dead라고 하면 클라이언트도 제거 (gold/xp 없이)
         if (he.dead && !e.dead) {
-          killE(e);
+          e.dead = true;
+          if (e.hpBarEl) { e.hpBarEl.remove(); e.hpBarEl = null; }
+          if (e.obj) { scene.remove(e.obj); e.obj = null; }
+          burst(e.pos, e.kind === 'boss' ? 0xf59e0b : 0xe4e4e7, e.kind === 'boss' ? 30 : 12);
+          SoundManager.play('monster_die');
         }
       }
     });
+
+    // 호스트 목록에 없는 로컬 몬스터 제거 (파도 전환 등으로 사라진 경우)
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const e = enemies[i];
+      if (e.id && !hostIds.has(e.id) && !e.dead) {
+        e.dead = true;
+        if (e.hpBarEl) { e.hpBarEl.remove(); e.hpBarEl = null; }
+        if (e.obj) { scene.remove(e.obj); e.obj = null; }
+      }
+    }
   }
 };
 
