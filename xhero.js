@@ -1054,13 +1054,26 @@ function hitE(e,dmg,isCrit=false){
   }
   if(e.hp<=0)killE(e);
 }
-function killE(e){
+function killE(e, killerId){
   if(e.dead)return;
-  e.dead=true;gold+=e.gold;gainXP(e.xp);
+  e.dead=true;
+  // 호스트/솔로는 직접 획득
+  gold+=e.gold;gainXP(e.xp);
   SoundManager.play('monster_die');
   SoundManager.play('gold');
   if(e.hpBarEl){e.hpBarEl.remove();e.hpBarEl=null}
   burst(e.pos,e.kind==='boss'?0xf59e0b:0xe4e4e7,e.kind==='boss'?30:12);
+  // 멀티: 클라이언트에게 보상 전달
+  if (gameMode !== 'solo' && typeof NetworkManager !== 'undefined' && NetworkManager.isHost) {
+    NetworkManager.broadcast({
+      type: 'ENEMY_KILLED',
+      gold: e.gold,
+      xp: e.xp,
+      kind: e.kind,
+      x: Number(e.pos.x.toFixed(2)),
+      z: Number(e.pos.z.toFixed(2))
+    });
+  }
 }
 function gainXP(v){
   hero.xp+=v;
@@ -3221,6 +3234,20 @@ const NetworkManager = {
         }
         break;
       }
+      case 'ENEMY_KILLED': {
+        // 클라이언트만 처리 (호스트는 killE에서 직접 획득)
+        if (!this.isHost) {
+          gold += msg.gold || 0;
+          gainXP(msg.xp || 0);
+          SoundManager.play('monster_die');
+          SoundManager.play('gold');
+          // 몬스터 죽음 VFX
+          const killPos = new THREE.Vector3(msg.x || 0, 0, msg.z || 0);
+          burst(killPos, msg.kind === 'boss' ? 0xf59e0b : 0xe4e4e7, msg.kind === 'boss' ? 30 : 12);
+          syncHud();
+        }
+        break;
+      }
       case 'HERO_ATTACK': {
         if (msg.sender !== this.myId) {
           this.triggerRemoteAttack(msg);
@@ -3656,13 +3683,11 @@ const NetworkManager = {
           if (e.obj) e.obj.position.copy(e.pos);
         }
         e.hp = he.hp;
-        // 호스트가 dead라고 하면 클라이언트도 제거 (gold/xp 없이)
+        // 호스트가 dead라고 하면 클라이언트도 제거 (VFX/사운드는 ENEMY_KILLED 패킷에서 처리)
         if (he.dead && !e.dead) {
           e.dead = true;
           if (e.hpBarEl) { e.hpBarEl.remove(); e.hpBarEl = null; }
           if (e.obj) { scene.remove(e.obj); e.obj = null; }
-          burst(e.pos, e.kind === 'boss' ? 0xf59e0b : 0xe4e4e7, e.kind === 'boss' ? 30 : 12);
-          SoundManager.play('monster_die');
         }
       }
     });
