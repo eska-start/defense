@@ -35,7 +35,8 @@
         <span><b id="heroName">전사</b> · <b id="level">LV 1</b> · XP <i id="xp">0 / 100</i></span>
         <span>GOLD <i id="gold">500 G</i> · 인벤 <i id="inventoryText">0 / 8</i></span>
       <div class="hudButtons">
-        <button id="soundBtn" type="button" class="hudAction soundAction" title="사운드 설정 (BGM/SFX)">🔊</button>
+        <button id="ctrlModeQuickBtn" type="button" class="hudAction ctrlModeAction" title="조작 모드 전환 (조이스틱 / 클릭이동)">🕹️ 패드</button>
+        <button id="soundBtn" type="button" class="hudAction soundAction" title="게임 설정 (조작/사운드)">⚙️</button>
         <button id="shopBtn" type="button" class="hudAction">상점 <small>I</small></button>
         <button id="skillBtn" type="button" class="hudAction skillAction">스킬 <small>K</small></button>
       </div>
@@ -183,11 +184,34 @@
       </section>
     </div>
 
-    <!-- ─── SOUND SETTINGS ─── -->
+    <!-- ─── GAME & SOUND SETTINGS ─── -->
     <div id="soundModal" class="overlay hidden">
-      <section class="card soundCard">
-        <div class="eyebrow">AUDIO SETTINGS</div>
-        <h1>🎵 사운드 설정</h1>
+      <section class="card soundCard settingsCard">
+        <div class="eyebrow">SETTINGS</div>
+        <h1>⚙️ 게임 설정</h1>
+        
+        <!-- 조작 방식 선택 섹션 -->
+        <div class="settingsSection">
+          <div class="settingsSectionTitle">🕹️ 조작 방식 (Control Mode)</div>
+          <div class="controlModeSelector">
+            <button type="button" id="ctrlModeJoystickBtn" class="ctrlModeCard active" data-mode="joystick">
+              <span class="ctrlIcon">🕹️</span>
+              <div class="ctrlText">
+                <b>가상 키패드 (조이스틱)</b>
+                <small>화면 전구간 터치/드래그하여 방향 패드로 캐릭터 조작</small>
+              </div>
+            </button>
+            <button type="button" id="ctrlModeClickBtn" class="ctrlModeCard" data-mode="click">
+              <span class="ctrlIcon">🎯</span>
+              <div class="ctrlText">
+                <b>클릭 / 터치 이동</b>
+                <small>화면을 클릭 또는 터치한 위치로 캐릭터가 자동 이동</small>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="settingsSectionTitle">🎵 사운드 설정</div>
         <div class="soundControls">
           <div class="soundRow">
             <div class="soundLabel">

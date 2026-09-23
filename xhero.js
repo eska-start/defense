@@ -141,6 +141,7 @@ const SoundManager = {
     this.init();
     this.resumeContext();
     this.updateUI();
+    if (typeof ControlManager !== 'undefined') ControlManager.updateUI();
     show('soundModal');
   },
 
@@ -1923,35 +1924,94 @@ function useSkill(key) {
   }
 }
 
-/* ═══ MOVEMENT ═══ */
+/* ═══ MOVEMENT & CONTROL SYSTEM ═══ */
 const touchDir = { x: 0, z: 0 };
-function move(dt){
-  if(hero.dead)return;
-  let x = (keys.has('d')||keys.has('arrowright')?1:0) - (keys.has('a')||keys.has('arrowleft')?1:0) + touchDir.x;
-  let z = (keys.has('s')||keys.has('arrowdown')?1:0) - (keys.has('w')||keys.has('arrowup')?1:0) + touchDir.z;
-  
-  let len = Math.hypot(x, z);
-  hero.isMoving = len > 0.05;
-  if(!hero.isMoving)return;
+let targetMovePos = null;
 
-  if (len > 1) { x /= len; z /= len; }
+function clickTargetFx(pos) {
+  if (typeof ring === 'function') ring(pos, 0.75, 0x38bdf8);
+  if (typeof spawnRuneCircle === 'function') spawnRuneCircle(pos, 0x0ea5e9, 0.65, 0.35);
+}
 
-  // Screen-space horizontal movement determination for isometric quarter-view camera (16,20,16):
-  // Screen right is (+x, -z) -> screenDx = x - z.
-  const screenDx = x - z;
-  if (keys.has('a') || keys.has('arrowleft')) {
-    hero.lastDirX = -1;
-  } else if (keys.has('d') || keys.has('arrowright')) {
-    hero.lastDirX = 1;
-  } else if (Math.abs(screenDx) > 0.05) {
-    hero.lastDirX = (screenDx < 0) ? -1 : 1;
+const INV_SQRT2 = 0.7071067811865475;
+
+function move(dt) {
+  if (hero.dead) return;
+
+  // 1. Screen-space keyboard input (D/Right: +X, A/Left: -X, W/Up: +Y, S/Down: -Y)
+  const kx = (keys.has('d') || keys.has('arrowright') ? 1 : 0) - (keys.has('a') || keys.has('arrowleft') ? 1 : 0);
+  const ky = (keys.has('w') || keys.has('arrowup') ? 1 : 0) - (keys.has('s') || keys.has('arrowdown') ? 1 : 0);
+
+  // 2. Screen-space virtual joystick input (touchDir.x: +X, touchDir.z: down(+) -> -Z is +Y)
+  const jx = touchDir.x;
+  const jy = -touchDir.z;
+
+  let sx = kx + jx;
+  let sy = ky + jy;
+  const keyOrJoyLen = Math.hypot(sx, sy);
+
+  if (keyOrJoyLen > 0.05) {
+    // Direct manual input cancels any automated click-to-move target
+    targetMovePos = null;
+
+    if (keyOrJoyLen > 1) {
+      sx /= keyOrJoyLen;
+      sy /= keyOrJoyLen;
+    }
+
+    // Convert Screen Space (sx: right, sy: up) to Isometric World Space (wx, wz)
+    // Camera is at (16, 20, 16) looking at (0, 0, 0).
+    // Screen Right in world coords is (+1/√2, -1/√2).
+    // Screen Up in world coords is (-1/√2, -1/√2).
+    const wx = (sx - sy) * INV_SQRT2;
+    const wz = (-sx - sy) * INV_SQRT2;
+
+    hero.isMoving = true;
+    if (Math.abs(sx) > 0.05) {
+      hero.lastDirX = sx > 0 ? 1 : -1;
+    }
+
+    const v = new THREE.Vector3(wx, 0, wz).multiplyScalar(hero.speed * dt);
+    hero.pos.add(v);
+    hero.pos.x = THREE.MathUtils.clamp(hero.pos.x, -MAP_H + 1, MAP_H - 1);
+    hero.pos.z = THREE.MathUtils.clamp(hero.pos.z, -MAP_H + 1, MAP_H - 1);
+    hero.facing.set(wx, 0, wz).normalize();
+    if (hero.obj) { hero.obj.position.copy(hero.pos); }
+    return;
   }
 
-  const v = new THREE.Vector3(x, 0, z).multiplyScalar(hero.speed * dt);
-  hero.pos.add(v);hero.pos.x=THREE.MathUtils.clamp(hero.pos.x,-MAP_H+1,MAP_H-1);
-  hero.pos.z=THREE.MathUtils.clamp(hero.pos.z,-MAP_H+1,MAP_H-1);
-  hero.facing.set(v.x,0,v.z).normalize();
-  if(hero.obj){hero.obj.position.copy(hero.pos);}
+  // 3. Click-to-Move destination tracking
+  if (targetMovePos) {
+    const toTarget = new THREE.Vector3().subVectors(targetMovePos, hero.pos);
+    toTarget.y = 0;
+    const dist = toTarget.length();
+
+    if (dist > 0.15) {
+      hero.isMoving = true;
+      toTarget.normalize();
+
+      // Screen horizontal direction from world vector: (toTarget.x - toTarget.z)
+      const screenDx = toTarget.x - toTarget.z;
+      if (Math.abs(screenDx) > 0.05) {
+        hero.lastDirX = screenDx > 0 ? 1 : -1;
+      }
+
+      const step = Math.min(dist, hero.speed * dt);
+      hero.pos.addScaledVector(toTarget, step);
+      hero.pos.x = THREE.MathUtils.clamp(hero.pos.x, -MAP_H + 1, MAP_H - 1);
+      hero.pos.z = THREE.MathUtils.clamp(hero.pos.z, -MAP_H + 1, MAP_H - 1);
+      hero.facing.copy(toTarget);
+      if (hero.obj) { hero.obj.position.copy(hero.pos); }
+      return;
+    } else {
+      // Reached click destination
+      targetMovePos = null;
+      hero.isMoving = false;
+      return;
+    }
+  }
+
+  hero.isMoving = false;
 }
 
 /* ═══ 2.5D SQUISH & STRETCH ANIMATIONS & HEALTH BARS ═══ */
@@ -3784,6 +3844,7 @@ function enterLobby(type){
 
 /* ═══ GAME FLOW ═══ */
 function clearWorld(){
+  targetMovePos = null;
   const hpContainer=$('hpBars');
   if(hpContainer)hpContainer.replaceChildren();
   enemies.splice(0).forEach(e=>{
@@ -3839,7 +3900,7 @@ for(const key of SK){const el=$('skill'+key);if(el)el.addEventListener('click',(
   if(state==='play')useSkill(key)})}
 
 /* buttons */
-const sBtn=$('soundBtn');if(sBtn)sBtn.onclick=e=>{e.preventDefault();SoundManager.init();SoundManager.toggleMute()};
+const sBtn=$('soundBtn');if(sBtn)sBtn.onclick=e=>{e.preventDefault();SoundManager.init();SoundManager.openModal()};
 
 // 모드 선택 버튼들
 const startSolo = $('startSoloBtn') || $('startBtn');
@@ -3955,116 +4016,263 @@ $('resumeBtn').onclick=()=>{SoundManager.play('click');state='play';hide('pause'
 $('restartBtn').onclick=()=>{SoundManager.play('click');hideAll();show('start');state='menu'};
 $('victoryBtn').onclick=()=>{SoundManager.play('click');hideAll();show('start');state='menu'};
 
-/* ═══ MOBILE DYNAMIC FLOATING JOYSTICK CONTROLLER ═══ */
+/* ═══ CONTROL MANAGER & INPUT SYSTEM (JOYSTICK & CLICK-TO-MOVE) ═══ */
 const joystickEl = $('touchJoystick');
 const knobEl = $('joystickKnob');
 
-if (joystickEl && knobEl) {
-  let joystickActive = false;
-  let touchId = null;
-  let centerX = 0, centerY = 0;
-  const maxRadius = 45;
+// Raycaster & Ground intersection for Click-to-Move
+const groundRaycaster = new THREE.Raycaster();
+const screenMouse = new THREE.Vector2();
+const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const groundHitPoint = new THREE.Vector3();
 
-  const isGameplayTouch = target => {
-    if (state !== 'play' && state !== 'lobby') return false;
-    if (!target || !target.closest) return true;
-    return !target.closest(
-      'button, input, select, textarea, a, .skillSlot, .overlay, #hud, #skillBar, .hudAction, #lobbyHud, .lobbyHud'
-    );
-  };
+function getGroundPointFromScreen(clientX, clientY) {
+  if (!camera) return null;
+  screenMouse.x = (clientX / window.innerWidth) * 2 - 1;
+  screenMouse.y = -(clientY / window.innerHeight) * 2 + 1;
+  groundRaycaster.setFromCamera(screenMouse, camera);
+  const hit = groundRaycaster.ray.intersectPlane(groundPlane, groundHitPoint);
+  if (hit) {
+    hit.x = THREE.MathUtils.clamp(hit.x, -MAP_H + 1, MAP_H - 1);
+    hit.z = THREE.MathUtils.clamp(hit.z, -MAP_H + 1, MAP_H - 1);
+    hit.y = 0;
+    return hit.clone();
+  }
+  return null;
+}
 
-  function showJoystickAt(x, y) {
-    centerX = x;
-    centerY = y;
-    joystickEl.style.display = 'block';
-    joystickEl.style.left = (centerX - maxRadius) + 'px';
-    joystickEl.style.top = (centerY - maxRadius) + 'px';
-    knobEl.style.transform = 'translate(0px, 0px)';
+let joystickActive = false;
+let touchId = null;
+let centerX = 0, centerY = 0;
+const maxRadius = 45;
+
+function showJoystickAt(x, y) {
+  if (!joystickEl || !knobEl) return;
+  centerX = x;
+  centerY = y;
+  joystickEl.style.display = 'block';
+  joystickEl.style.left = (centerX - maxRadius) + 'px';
+  joystickEl.style.top = (centerY - maxRadius) + 'px';
+  knobEl.style.transform = 'translate(0px, 0px)';
+}
+
+function updateJoystick(clientX, clientY) {
+  if (!knobEl) return;
+  let dx = clientX - centerX;
+  let dy = clientY - centerY;
+  const dist = Math.hypot(dx, dy);
+
+  if (dist > maxRadius) {
+    dx = (dx / dist) * maxRadius;
+    dy = (dy / dist) * maxRadius;
   }
 
-  function updateJoystick(clientX, clientY) {
-    let dx = clientX - centerX;
-    let dy = clientY - centerY;
-    const dist = Math.hypot(dx, dy);
+  knobEl.style.transform = `translate(${dx}px, ${dy}px)`;
+  touchDir.x = dx / maxRadius;
+  touchDir.z = dy / maxRadius;
+}
 
-    if (dist > maxRadius) {
-      dx = (dx / dist) * maxRadius;
-      dy = (dy / dist) * maxRadius;
+function resetJoystick() {
+  joystickActive = false;
+  touchId = null;
+  if (joystickEl) joystickEl.style.display = 'none';
+  if (knobEl) knobEl.style.transform = 'translate(0px, 0px)';
+  touchDir.x = 0;
+  touchDir.z = 0;
+}
+
+const ControlManager = {
+  mode: localStorage.getItem('xhero_control_mode') || 'joystick', // 'joystick' | 'click'
+  
+  setMode(newMode, showNotice = true) {
+    this.mode = newMode;
+    try { localStorage.setItem('xhero_control_mode', newMode); } catch(e){}
+    this.updateUI();
+    resetJoystick();
+    targetMovePos = null;
+    if (showNotice) {
+      if (newMode === 'joystick') {
+        notify('🕹️ 조작 모드: 가상 패드 (화면 전구간 조이스틱)');
+      } else {
+        notify('🎯 조작 모드: 클릭 이동 (화면 클릭/터치한 곳으로 이동)');
+      }
+    }
+  },
+
+  toggleMode() {
+    const next = this.mode === 'joystick' ? 'click' : 'joystick';
+    this.setMode(next, true);
+  },
+
+  updateUI() {
+    const isJoy = this.mode === 'joystick';
+    const joyBtn = $('ctrlModeJoystickBtn');
+    const clickBtn = $('ctrlModeClickBtn');
+    const quickBtn = $('ctrlModeQuickBtn');
+
+    if (joyBtn && clickBtn) {
+      joyBtn.classList.toggle('active', isJoy);
+      clickBtn.classList.toggle('active', !isJoy);
     }
 
-    knobEl.style.transform = `translate(${dx}px, ${dy}px)`;
-    touchDir.x = dx / maxRadius;
-    touchDir.z = dy / maxRadius;
-  }
+    if (quickBtn) {
+      if (isJoy) {
+        quickBtn.innerHTML = '🕹️ 패드';
+        quickBtn.classList.remove('mode-click');
+        quickBtn.title = '현재: 가상 패드 (클릭하여 전환)';
+      } else {
+        quickBtn.innerHTML = '🎯 클릭';
+        quickBtn.classList.add('mode-click');
+        quickBtn.title = '현재: 클릭 이동 (클릭하여 전환)';
+      }
+    }
+  },
 
-  function resetJoystick() {
-    joystickActive = false;
-    touchId = null;
-    joystickEl.style.display = 'none';
-    knobEl.style.transform = 'translate(0px, 0px)';
-    touchDir.x = 0;
-    touchDir.z = 0;
-  }
+  init() {
+    const joyBtn = $('ctrlModeJoystickBtn');
+    const clickBtn = $('ctrlModeClickBtn');
+    const quickBtn = $('ctrlModeQuickBtn');
 
-  // Floating joystick appears on touch in gameplay area
-  window.addEventListener('touchstart', e => {
-    if ((state !== 'play' && state !== 'lobby') || joystickActive || !e.changedTouches.length) return;
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      const t = e.changedTouches[i];
-      if (!isGameplayTouch(e.target)) continue;
-      if (t.clientX < window.innerWidth * 0.65 && t.clientY > 65) {
+    if (joyBtn) {
+      joyBtn.onclick = () => {
+        SoundManager.play('click');
+        this.setMode('joystick', true);
+      };
+    }
+
+    if (clickBtn) {
+      clickBtn.onclick = () => {
+        SoundManager.play('click');
+        this.setMode('click', true);
+      };
+    }
+
+    if (quickBtn) {
+      quickBtn.onclick = (e) => {
+        e.preventDefault();
+        SoundManager.play('click');
+        this.toggleMode();
+      };
+    }
+
+    this.updateUI();
+  }
+};
+
+const isGameplayTouch = target => {
+  if (state !== 'play' && state !== 'lobby') return false;
+  if (!target || !target.closest) return true;
+  return !target.closest(
+    'button, input, select, textarea, a, .skillSlot, .overlay, #hud, #skillBar, .hudAction, #lobbyHud, .lobbyHud, .ctrlModeCard, .modalMuteBtn'
+  );
+};
+
+// Mobile Touch Events (Screen-wide Joystick OR Click-to-Move)
+window.addEventListener('touchstart', e => {
+  if ((state !== 'play' && state !== 'lobby') || !e.changedTouches.length) return;
+
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const t = e.changedTouches[i];
+    if (!isGameplayTouch(e.target)) continue;
+
+    if (ControlManager.mode === 'joystick') {
+      if (!joystickActive) {
         touchId = t.identifier;
         joystickActive = true;
         showJoystickAt(t.clientX, t.clientY);
         break;
       }
-    }
-  }, { passive: false });
-
-  window.addEventListener('touchmove', e => {
-    if (!joystickActive) return;
-    for (const t of e.changedTouches) {
-      if (t.identifier === touchId) {
-        e.preventDefault();
-        updateJoystick(t.clientX, t.clientY);
+    } else {
+      // Click-to-Move Mode (Full Screen)
+      const pt = getGroundPointFromScreen(t.clientX, t.clientY);
+      if (pt) {
+        touchId = t.identifier;
+        targetMovePos = pt;
+        clickTargetFx(pt);
         break;
       }
     }
-  }, { passive: false });
+  }
+}, { passive: false });
 
-  window.addEventListener('touchend', e => {
-    if (!joystickActive) return;
-    for (const t of e.changedTouches) {
-      if (t.identifier === touchId) {
+window.addEventListener('touchmove', e => {
+  for (const t of e.changedTouches) {
+    if (t.identifier === touchId) {
+      if (ControlManager.mode === 'joystick') {
+        if (joystickActive) {
+          e.preventDefault();
+          updateJoystick(t.clientX, t.clientY);
+        }
+      } else {
+        // Continuous Drag-to-Move in Click Mode
+        const pt = getGroundPointFromScreen(t.clientX, t.clientY);
+        if (pt) targetMovePos = pt;
+      }
+      break;
+    }
+  }
+}, { passive: false });
+
+window.addEventListener('touchend', e => {
+  for (const t of e.changedTouches) {
+    if (t.identifier === touchId) {
+      if (ControlManager.mode === 'joystick') {
         resetJoystick();
-        break;
+      } else {
+        touchId = null;
       }
+      break;
     }
-  }, { passive: false });
+  }
+}, { passive: false });
 
-  window.addEventListener('touchcancel', resetJoystick, { passive: true });
+window.addEventListener('touchcancel', () => {
+  resetJoystick();
+  touchId = null;
+}, { passive: true });
 
-  // Desktop mouse support for testing floating joystick
-  let isMouseDown = false;
-  window.addEventListener('mousedown', e => {
-    if ((state !== 'play' && state !== 'lobby') || isMouseDown) return;
-    if (!isGameplayTouch(e.target)) return;
-    if (e.clientX < window.innerWidth * 0.6 && e.clientY > 65) {
-      isMouseDown = true;
-      joystickActive = true;
-      showJoystickAt(e.clientX, e.clientY);
+// Desktop Mouse Events (Joystick Drag OR Click-to-Move)
+let isMouseDown = false;
+window.addEventListener('mousedown', e => {
+  if (e.button !== 0) return; // Only left-click
+  if (state !== 'play' && state !== 'lobby') return;
+  if (!isGameplayTouch(e.target)) return;
+
+  isMouseDown = true;
+  if (ControlManager.mode === 'joystick') {
+    joystickActive = true;
+    showJoystickAt(e.clientX, e.clientY);
+  } else {
+    const pt = getGroundPointFromScreen(e.clientX, e.clientY);
+    if (pt) {
+      targetMovePos = pt;
+      clickTargetFx(pt);
     }
-  });
-  window.addEventListener('mousemove', e => {
-    if (isMouseDown) updateJoystick(e.clientX, e.clientY);
-  });
-  window.addEventListener('mouseup', () => {
-    if (isMouseDown) {
-      isMouseDown = false;
+  }
+});
+
+window.addEventListener('mousemove', e => {
+  if (!isMouseDown) return;
+  if (ControlManager.mode === 'joystick') {
+    if (joystickActive) updateJoystick(e.clientX, e.clientY);
+  } else {
+    // Continuous drag to move on PC
+    const pt = getGroundPointFromScreen(e.clientX, e.clientY);
+    if (pt) targetMovePos = pt;
+  }
+});
+
+window.addEventListener('mouseup', e => {
+  if (e.button !== 0) return;
+  if (isMouseDown) {
+    isMouseDown = false;
+    if (ControlManager.mode === 'joystick') {
       resetJoystick();
     }
-  });
-}
+  }
+});
+
+ControlManager.init();
 
 /* ═══ RESIZE ═══ */
 function resize(){
